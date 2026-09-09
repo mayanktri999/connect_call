@@ -1,15 +1,65 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_design_system.dart';
+import '../../models/user_model.dart';
+import '../auth/auth_service.dart';
+import '../auth/user_service.dart';
 import '../../widgets/app_bottom_nav.dart';
 import '../../widgets/user_avatar.dart';
-import '../auth/auth_service.dart';
-class ProfileScreen extends StatelessWidget {
+
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
-  
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  UserModel? _user;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _loadUser();
+  }
+
+  Future<void> _loadUser() async {
+    final firebaseUser = FirebaseAuth.instance.currentUser;
+
+    if (firebaseUser == null) {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      return;
+    }
+
+    try {
+      final user = await UserService.instance.getUser(firebaseUser.uid);
+
+      if (!mounted) return;
+
+      setState(() {
+        _user = user;
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Failed to load user: $e');
+
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,12 +101,15 @@ class ProfileScreen extends StatelessWidget {
                     case 0:
                       context.go('/home');
                       break;
+
                     case 1:
                       context.go('/contacts');
                       break;
+
                     case 2:
                       context.go('/calls');
                       break;
+
                     case 3:
                       context.go('/profile');
                       break;
@@ -103,6 +156,22 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildProfile() {
+    final name = _user?.name.isNotEmpty == true
+        ? _user!.name
+        : 'User';
+
+    final email = _user?.email.isNotEmpty == true
+        ? _user!.email
+        : FirebaseAuth.instance.currentUser?.email ?? '';
+
+    final initials = name
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((part) => part.isNotEmpty)
+        .take(2)
+        .map((part) => part[0].toUpperCase())
+        .join();
+
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 22),
       decoration: BoxDecoration(
@@ -116,10 +185,10 @@ class ProfileScreen extends StatelessWidget {
           Stack(
             clipBehavior: Clip.none,
             children: [
-              const UserAvatar(
-                initials: 'MS',
+              UserAvatar(
+                initials: initials.isEmpty ? 'U' : initials,
                 color: AppColors.primary,
-                online: true,
+                online: _user?.isOnline ?? true,
                 size: 92,
               ),
               Positioned(
@@ -131,7 +200,10 @@ class ProfileScreen extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: AppColors.primary,
                     shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.surface, width: 3),
+                    border: Border.all(
+                      color: AppColors.surface,
+                      width: 3,
+                    ),
                   ),
                   child: const Icon(
                     Icons.edit_rounded,
@@ -143,9 +215,9 @@ class ProfileScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          const Text(
-            'Mayank',
-            style: TextStyle(
+          Text(
+            _isLoading ? 'Loading...' : name,
+            style: const TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w800,
               color: AppColors.darkText,
@@ -153,14 +225,17 @@ class ProfileScreen extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 10,
+              vertical: 5,
+            ),
             decoration: BoxDecoration(
               color: const Color(0xFFE9FBF3),
               borderRadius: BorderRadius.circular(999),
             ),
-            child: const Text(
-              'Online',
-              style: TextStyle(
+            child: Text(
+              (_user?.isOnline ?? true) ? 'Online' : 'Offline',
+              style: const TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF10B981),
@@ -168,9 +243,9 @@ class ProfileScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'mayank@example.com',
-            style: TextStyle(
+          Text(
+            _isLoading ? '' : email,
+            style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w500,
               color: AppColors.secondaryText,
@@ -192,18 +267,31 @@ class ProfileScreen extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _StatItem(value: '24', label: 'Contacts'),
+          const _StatItem(
+            value: '24',
+            label: 'Contacts',
+          ),
           _verticalDivider(),
-          _StatItem(value: '128', label: 'Calls'),
+          const _StatItem(
+            value: '128',
+            label: 'Calls',
+          ),
           _verticalDivider(),
-          _StatItem(value: '16', label: 'This week'),
+          const _StatItem(
+            value: '16',
+            label: 'This week',
+          ),
         ],
       ),
     );
   }
 
   Widget _verticalDivider() {
-    return Container(width: 1, height: 30, color: AppColors.cardBorder);
+    return Container(
+      width: 1,
+      height: 30,
+      color: AppColors.cardBorder,
+    );
   }
 
   Widget _buildSectionTitle(String title) {
@@ -219,6 +307,10 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildAccountCard() {
+    final email = _user?.email.isNotEmpty == true
+        ? _user!.email
+        : FirebaseAuth.instance.currentUser?.email ?? '';
+
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -231,10 +323,10 @@ class ProfileScreen extends StatelessWidget {
           _ProfileRow(
             icon: Icons.email_outlined,
             title: 'Email',
-            value: 'mayank@example.com',
+            value: _isLoading ? 'Loading...' : email,
           ),
           _divider(),
-          _ProfileRow(
+          const _ProfileRow(
             icon: Icons.phone_outlined,
             title: 'Phone',
             value: '+91 98765 43210',
@@ -243,7 +335,7 @@ class ProfileScreen extends StatelessWidget {
           _ProfileRow(
             icon: Icons.circle,
             title: 'Status',
-            value: 'Available',
+            value: (_user?.isOnline ?? true) ? 'Available' : 'Offline',
             valueColor: const Color(0xFF10B981),
           ),
         ],
@@ -285,24 +377,30 @@ class ProfileScreen extends StatelessWidget {
 
   Widget _buildLogoutButton(BuildContext context) {
     return GestureDetector(
-         onTap: () async {
-                 await AuthService.instance.logout();
+      onTap: () async {
+        await AuthService.instance.logout();
 
-                   if (!context.mounted) return;
+        if (!context.mounted) return;
 
-                    context.go('/login');
-               },
+        context.go('/login');
+      },
       child: Container(
         height: 52,
         decoration: BoxDecoration(
           color: const Color(0xFFFFF1F2),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFFFD9DC)),
+          border: Border.all(
+            color: const Color(0xFFFFD9DC),
+          ),
         ),
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.logout_rounded, size: 18, color: Color(0xFFE54850)),
+            Icon(
+              Icons.logout_rounded,
+              size: 18,
+              color: Color(0xFFE54850),
+            ),
             SizedBox(width: 8),
             Text(
               'Log out',
@@ -332,7 +430,10 @@ class _StatItem extends StatelessWidget {
   final String value;
   final String label;
 
-  const _StatItem({required this.value, required this.label});
+  const _StatItem({
+    required this.value,
+    required this.label,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -389,7 +490,11 @@ class _ProfileRow extends StatelessWidget {
               color: AppColors.primarySoft,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, size: 16, color: AppColors.primary),
+            child: Icon(
+              icon,
+              size: 16,
+              color: AppColors.primary,
+            ),
           ),
           const SizedBox(width: 11),
           Text(
@@ -436,7 +541,11 @@ class _ActionRow extends StatelessWidget {
         child: Row(
           children: [
             const SizedBox(width: 15),
-            Icon(icon, size: 18, color: AppColors.secondaryText),
+            Icon(
+              icon,
+              size: 18,
+              color: AppColors.secondaryText,
+            ),
             const SizedBox(width: 13),
             Expanded(
               child: Text(

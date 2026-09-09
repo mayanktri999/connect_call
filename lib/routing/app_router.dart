@@ -8,10 +8,32 @@ import '../screens/home/home_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/splash/splash_screen.dart';
 import '../screens/calls/audio_call_screen.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
 final GoRouter appRouter = GoRouter(
   initialLocation: '/splash',
+    redirect: (context, state) {
+    final user = FirebaseAuth.instance.currentUser;
 
+    final isSplash = state.matchedLocation == '/splash';
+    final isLogin = state.matchedLocation == '/login';
+    final isRegister = state.matchedLocation == '/register';
+
+    // Let logged-out users access authentication screens.
+    if (user == null) {
+      if (isSplash || isLogin || isRegister) {
+        return null;
+      }
+
+      return '/login';
+    }
+
+    // Logged-in users should not go back to login/register.
+    if (isLogin || isRegister) {
+      return '/home';
+    }
+
+    return null;
+  },
   routes: [
     GoRoute(
       path: '/splash',

@@ -5,9 +5,11 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_design_system.dart';
 import '../../widgets/app_bottom_nav.dart';
 import '../../widgets/user_avatar.dart';
-
+import '../auth/auth_service.dart';
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
+
+  
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +40,7 @@ class ProfileScreen extends StatelessWidget {
                     const SizedBox(height: 10),
                     _buildSettingsCard(),
                     const SizedBox(height: 18),
-                    _buildLogoutButton(),
+                    _buildLogoutButton(context),
                   ],
                 ),
               ),
@@ -281,9 +283,15 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildLogoutButton() {
+  Widget _buildLogoutButton(BuildContext context) {
     return GestureDetector(
-      onTap: () {},
+         onTap: () async {
+                 await AuthService.instance.logout();
+
+                   if (!context.mounted) return;
+
+                    context.go('/login');
+               },
       child: Container(
         height: 52,
         decoration: BoxDecoration(

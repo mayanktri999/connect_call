@@ -9,6 +9,7 @@ import '../../widgets/custom_text_field.dart';
 import '../../widgets/gradient_button.dart';
 import '../../widgets/password_field.dart';
 import 'register_screen.dart';
+import 'package:go_router/go_router.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -96,7 +97,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             GradientButton(
                               text: 'Login',
                               onPressed: () {
-                                // TODO: Connect authentication
+
+                                context.go('/home');
                               },
                             ),
                           ],

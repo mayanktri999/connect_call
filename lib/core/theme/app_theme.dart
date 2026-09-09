@@ -13,5 +13,28 @@ class AppTheme {
       brightness: Brightness.light,
     ),
     useMaterial3: true,
+    fontFamily: 'Poppins',
+    textTheme: ThemeData.light().textTheme.apply(
+      bodyColor: AppColors.darkText,
+      displayColor: AppColors.darkText,
+      fontFamily: 'Poppins',
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: AppColors.fieldBackground,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(color: AppColors.fieldBorder, width: 1.2),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(color: AppColors.fieldBorder, width: 1.2),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(color: AppColors.primary, width: 1.6),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+    ),
   );
 }

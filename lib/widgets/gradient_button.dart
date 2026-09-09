@@ -7,44 +7,35 @@ class GradientButton extends StatelessWidget {
   final String text;
   final VoidCallback? onPressed;
 
-  const GradientButton({
-    super.key,
-    required this.text,
-    this.onPressed,
-  });
+  const GradientButton({super.key, required this.text, this.onPressed});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 104,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(32),
-        gradient: const LinearGradient(
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-          colors: [
-            AppColors.primary,
-            AppColors.primaryDark,
+    return SizedBox(
+      width: double.infinity,
+      height: 58,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          gradient: const LinearGradient(
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            colors: [AppColors.primary, AppColors.primaryDark],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: 0.28),
+              blurRadius: 18,
+              offset: const Offset(0, 10),
+            ),
           ],
         ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withOpacity(0.25),
-            blurRadius: 22,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(32),
-          onTap: onPressed,
-          child: Center(
-            child: Text(
-              text,
-              style: AppTextStyles.button,
-            ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(18),
+            onTap: onPressed,
+            child: Center(child: Text(text, style: AppTextStyles.button)),
           ),
         ),
       ),

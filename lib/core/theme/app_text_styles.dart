@@ -7,58 +7,58 @@ class AppTextStyles {
   AppTextStyles._();
 
   static TextStyle heading = GoogleFonts.poppins(
-    fontSize: 48,
+    fontSize: 36,
     fontWeight: FontWeight.w800,
     color: AppColors.darkText,
-    height: 1.1,
+    height: 1.08,
   );
 
   static TextStyle authHeading = GoogleFonts.poppins(
-    fontSize: 42,
+    fontSize: 30,
     fontWeight: FontWeight.w800,
     color: AppColors.darkText,
-    height: 1.15,
+    height: 1.12,
   );
 
   static TextStyle subtitle = GoogleFonts.poppins(
-    fontSize: 26,
-    fontWeight: FontWeight.w400,
+    fontSize: 17,
+    fontWeight: FontWeight.w500,
     color: AppColors.secondaryText,
   );
 
   static TextStyle label = GoogleFonts.poppins(
-    fontSize: 18,
+    fontSize: 12,
     fontWeight: FontWeight.w600,
     color: AppColors.labelText,
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
   );
 
   static TextStyle input = GoogleFonts.poppins(
-    fontSize: 20,
-    fontWeight: FontWeight.w400,
+    fontSize: 16,
+    fontWeight: FontWeight.w500,
     color: AppColors.darkText,
   );
 
   static TextStyle hint = GoogleFonts.poppins(
-    fontSize: 20,
+    fontSize: 15,
     fontWeight: FontWeight.w400,
     color: AppColors.hintText,
   );
 
   static TextStyle button = GoogleFonts.poppins(
-    fontSize: 21,
-    fontWeight: FontWeight.w600,
+    fontSize: 17,
+    fontWeight: FontWeight.w700,
     color: Colors.white,
   );
 
   static TextStyle link = GoogleFonts.poppins(
-    fontSize: 20,
-    fontWeight: FontWeight.w600,
+    fontSize: 15,
+    fontWeight: FontWeight.w700,
     color: AppColors.primary,
   );
 
   static TextStyle footer = GoogleFonts.poppins(
-    fontSize: 19,
+    fontSize: 14,
     fontWeight: FontWeight.w400,
     color: AppColors.secondaryText,
   );

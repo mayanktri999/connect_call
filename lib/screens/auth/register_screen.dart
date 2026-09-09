@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_design_system.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../widgets/gradient_button.dart';
@@ -32,145 +33,123 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 48,
+      body: Container(
+        decoration: AppDesignSystem.createScreenBackground(),
+        child: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: AppDesignSystem.pagePadding,
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        maxWidth: AppDesignSystem.maxContentWidth,
+                      ),
+                      child: Container(
+                        padding: AppDesignSystem.panelPadding,
+                        decoration: AppDesignSystem.authCardDecoration,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.pop(context);
+                              },
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.arrow_back_rounded,
+                                    color: AppColors.secondaryText,
+                                    size: 22,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Back',
+                                    style: AppTextStyles.footer.copyWith(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 18),
+                            Text(
+                              'Create your account',
+                              style: AppTextStyles.authHeading,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Start connecting with people around you.',
+                              style: AppTextStyles.subtitle,
+                            ),
+                            const SizedBox(height: 26),
+                            CustomTextField(
+                              label: 'Full Name',
+                              hint: 'Your full name',
+                              controller: nameController,
+                            ),
+                            const SizedBox(height: 18),
+                            CustomTextField(
+                              label: 'Email',
+                              hint: 'you@example.com',
+                              controller: emailController,
+                              keyboardType: TextInputType.emailAddress,
+                            ),
+                            const SizedBox(height: 18),
+                            PasswordField(
+                              label: 'Password',
+                              hint: 'At least 8 characters',
+                              controller: passwordController,
+                            ),
+                            const SizedBox(height: 18),
+                            PasswordField(
+                              label: 'Confirm Password',
+                              hint: 'Repeat password',
+                              controller: confirmPasswordController,
+                            ),
+                            const SizedBox(height: 24),
+                            GradientButton(
+                              text: 'Create Account',
+                              onPressed: () {
+                                // TODO: Registration
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              ),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 18),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const SizedBox(height: 42),
-
+                    Text(
+                      'Already have an account? ',
+                      style: AppTextStyles.footer,
+                    ),
                     GestureDetector(
                       onTap: () {
-                        Navigator.pop(context);
-                      },
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.arrow_back,
-                            color: AppColors.secondaryText,
-                            size: 34,
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const LoginScreen(),
                           ),
-                          const SizedBox(width: 12),
-                          Text(
-                            'Back',
-                            style: AppTextStyles.footer.copyWith(
-                              fontSize: 21,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 55),
-
-                    Text(
-                      'Create your account',
-                      style: AppTextStyles.authHeading.copyWith(
-                        fontSize: 39,
-                      ),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    Text(
-                      'Start connecting with people around you.',
-                      style: AppTextStyles.subtitle.copyWith(
-                        fontSize: 22,
-                      ),
-                    ),
-
-                    const SizedBox(height: 70),
-
-                    CustomTextField(
-                      label: 'Full Name',
-                      hint: 'Your full name',
-                      controller: nameController,
-                    ),
-
-                    const SizedBox(height: 32),
-
-                    CustomTextField(
-                      label: 'Email',
-                      hint: 'you@example.com',
-                      controller: emailController,
-                      keyboardType: TextInputType.emailAddress,
-                    ),
-
-                    const SizedBox(height: 32),
-
-                    PasswordField(
-                      label: 'Password',
-                      hint: 'At least 8 characters',
-                      controller: passwordController,
-                    ),
-
-                    const SizedBox(height: 32),
-
-                    PasswordField(
-                      label: 'Confirm Password',
-                      hint: 'Repeat password',
-                      controller: confirmPasswordController,
-                    ),
-
-                    const SizedBox(height: 48),
-
-                    GradientButton(
-                      text: 'Create Account',
-                      onPressed: () {
-                        // TODO: Registration
+                        );
                       },
+                      child: Text('Login', style: AppTextStyles.link),
                     ),
-
-                    const SizedBox(height: 50),
                   ],
                 ),
               ),
-            ),
-
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(
-                vertical: 38,
-              ),
-              decoration: const BoxDecoration(
-                border: Border(
-                  top: BorderSide(
-                    color: Color(0xFFF0F2F5),
-                    width: 1,
-                  ),
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Already have an account? ',
-                    style: AppTextStyles.footer,
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const LoginScreen(),
-                        ),
-                      );
-                    },
-                    child: Text(
-                      'Login',
-                      style: AppTextStyles.link,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -9,7 +9,7 @@ import '../../widgets/connect_call_logo.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../widgets/gradient_button.dart';
 import '../../widgets/password_field.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -94,11 +94,76 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             const SizedBox(height: 22),
                             GradientButton(
-                              text: 'Login',
-                              onPressed: () {
-                                context.go('/home');
-                              },
-                            ),
+  text: 'Login',
+  onPressed: () async {
+    final email = emailController.text.trim();
+    final password = passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter your email and password'),
+        ),
+      );
+      return;
+    }
+
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Login successful'),
+        ),
+      );
+
+      context.go('/home');
+    } on FirebaseAuthException catch (e) {
+      if (!context.mounted) return;
+
+      String message;
+
+      switch (e.code) {
+        case 'user-not-found':
+          message = 'No account found with this email.';
+          break;
+
+        case 'wrong-password':
+        case 'invalid-credential':
+          message = 'Incorrect email or password.';
+          break;
+
+        case 'invalid-email':
+          message = 'Please enter a valid email address.';
+          break;
+
+        case 'user-disabled':
+          message = 'This account has been disabled.';
+          break;
+
+        default:
+          message = e.message ?? 'Login failed.';
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Something went wrong: $e'),
+        ),
+      );
+    }
+  },
+),
                           ],
                         ),
                       ),

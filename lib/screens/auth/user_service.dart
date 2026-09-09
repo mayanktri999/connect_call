@@ -13,7 +13,11 @@ class UserService {
       _firestore.collection('users');
 
   Future<void> createUser(UserModel user) async {
+    print('🔥 Creating Firestore user: ${user.uid}');
+
     await _users.doc(user.uid).set(user.toMap());
+
+    print('✅ Firestore user created successfully');
   }
 
   Future<UserModel?> getUser(String uid) async {

@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../widgets/connect_call_logo.dart';
@@ -19,24 +19,37 @@ class _SplashScreenState extends State<SplashScreen> {
   int activeDot = 0;
   Timer? timer;
 
-  @override
-  void initState() {
-    super.initState();
 
-    timer = Timer.periodic(const Duration(milliseconds: 500), (_) {
+@override
+void initState() {
+  super.initState();
+
+  _checkAuth();
+
+  timer = Timer.periodic(
+    const Duration(milliseconds: 500),
+    (_) {
       if (!mounted) return;
 
       setState(() {
         activeDot = (activeDot + 1) % 3;
       });
-    });
+    },
+  );
+}
+Future<void> _checkAuth() async {
+  await Future.delayed(const Duration(seconds: 2));
 
-    Timer(const Duration(seconds: 2), () {
-      if (!mounted) return;
+  if (!mounted) return;
 
-      context.go('/login');
-    });
+  final user = FirebaseAuth.instance.currentUser;
+
+  if (user != null) {
+    context.go('/home');
+  } else {
+    context.go('/login');
   }
+}
 
   @override
   void dispose() {

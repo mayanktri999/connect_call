@@ -14,8 +14,8 @@ class AuthService {
   Future<UserCredential> login({
     required String email,
     required String password,
-  }) async {
-    return await _auth.signInWithEmailAndPassword(
+  }) {
+    return _auth.signInWithEmailAndPassword(
       email: email.trim(),
       password: password,
     );
@@ -24,14 +24,14 @@ class AuthService {
   Future<UserCredential> register({
     required String email,
     required String password,
-  }) async {
-    return await _auth.createUserWithEmailAndPassword(
+  }) {
+    return _auth.createUserWithEmailAndPassword(
       email: email.trim(),
       password: password,
     );
   }
 
-  Future<void> logout() async {
-    await _auth.signOut();
+  Future<void> logout() {
+    return _auth.signOut();
   }
 }

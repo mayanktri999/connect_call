@@ -20,65 +20,65 @@ class AppBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 62,
+      height: 68,
+      padding: const EdgeInsets.only(top: 6),
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(
-          top: BorderSide(
-            color: Color(0xFFE8EEF4),
+        border: Border(top: BorderSide(color: Color(0xFFE8EEF4))),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x1A08B9D8),
+            blurRadius: 16,
+            offset: Offset(0, -4),
           ),
-        ),
+        ],
       ),
       child: Row(
-        children: List.generate(
-          _items.length,
-          (index) {
-            final selected = currentIndex == index;
-            final item = _items[index];
+        children: List.generate(_items.length, (index) {
+          final selected = currentIndex == index;
+          final item = _items[index];
 
-            return Expanded(
-              child: GestureDetector(
-                onTap: () => onTap(index),
-                behavior: HitTestBehavior.opaque,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 180),
-                      width: 34,
-                      height: 27,
-                      decoration: BoxDecoration(
-                        color: selected
-                            ? const Color(0xFFE0F7FB)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(
-                        item.$1,
-                        size: 19,
-                        color: selected
-                            ? const Color(0xFF08B5D0)
-                            : const Color(0xFF91A5BA),
-                      ),
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => onTap(index),
+              behavior: HitTestBehavior.opaque,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    width: 38,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      color: selected
+                          ? const Color(0xFFE4F9FF)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      item.$2,
-                      style: TextStyle(
-                        fontSize: 9,
-                        fontWeight:
-                            selected ? FontWeight.w600 : FontWeight.w500,
-                        color: selected
-                            ? const Color(0xFF08B5D0)
-                            : const Color(0xFF91A5BA),
-                      ),
+                    child: Icon(
+                      item.$1,
+                      size: 20,
+                      color: selected
+                          ? const Color(0xFF08B5D0)
+                          : const Color(0xFF91A5BA),
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    item.$2,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                      color: selected
+                          ? const Color(0xFF08B5D0)
+                          : const Color(0xFF91A5BA),
+                    ),
+                  ),
+                ],
               ),
-            );
-          },
-        ),
+            ),
+          );
+        }),
       ),
     );
   }

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_design_system.dart';
 import '../../widgets/app_bottom_nav.dart';
 import '../../widgets/search_field.dart';
 import '../../widgets/user_avatar.dart';
-import '../contacts/contacts_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -13,71 +13,69 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding: AppDesignSystem.appPagePadding,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildHeader(),
-                    const SizedBox(height: 15),
-
-                    const AppSearchField(),
-
-                    const SizedBox(height: 28),
-
-                    _buildCallActions(context),
-
-                    const SizedBox(height: 21),
-
-                    _buildOnlineSection(),
-
-                    const SizedBox(height: 24),
-
-                    _buildRecentHeader(),
-
-                    const SizedBox(height: 10),
-
-                    _buildRecentCalls(),
-
-                    const SizedBox(height: 10),
-                  ],
+      body: Container(
+        decoration: AppDesignSystem.createScreenBackground(),
+        child: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: AppDesignSystem.pagePadding.copyWith(top: 18, bottom: 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildHeader(),
+                      const SizedBox(height: 18),
+                      const AppSearchField(),
+                      const SizedBox(height: 24),
+                      _buildCallActions(context),
+                      const SizedBox(height: 24),
+                      _buildOnlineSection(),
+                      const SizedBox(height: 24),
+                      _buildRecentHeader(),
+                      const SizedBox(height: 12),
+                      _buildRecentCalls(),
+                    ],
+                  ),
                 ),
               ),
-            ),
 
-            AppBottomNav(
-              currentIndex: 0,
-              onTap: (index) {
-                // Navigation will be connected later.
-              },
-            ),
-          ],
+              AppBottomNav(
+                currentIndex: 0,
+                onTap: (index) {
+                  switch (index) {
+                    case 0:
+                      context.go('/home');
+                      break;
+                    case 1:
+                      context.go('/contacts');
+                      break;
+                    case 2:
+                      context.go('/calls');
+                      break;
+                    case 3:
+                      context.go('/profile');
+                      break;
+                  }
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
-
-  // ─────────────────────────────────────────────
-  // HEADER
-  // ─────────────────────────────────────────────
 
   Widget _buildHeader() {
     return Row(
       children: [
         const UserAvatar(
           initials: 'MS',
-          color: Color(0xFF19B5D3),
+          color: AppColors.primary,
           online: true,
           size: 38,
         ),
-
-        const SizedBox(width: 9),
-
+        const SizedBox(width: 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -85,29 +83,31 @@ class HomeScreen extends StatelessWidget {
               Text(
                 'Good morning,',
                 style: TextStyle(
-                  fontSize: 10,
-                  color: Color(0xFF8EA2B7),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.secondaryText,
                 ),
               ),
-              SizedBox(height: 1),
+              SizedBox(height: 2),
               Text(
                 'Mayank 👋',
                 style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF172033),
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.darkText,
                 ),
               ),
             ],
           ),
         ),
-
         Container(
-          width: 34,
-          height: 34,
+          width: 42,
+          height: 42,
           decoration: BoxDecoration(
-            color: const Color(0xFFF0F4F8),
-            borderRadius: BorderRadius.circular(12),
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.cardBorder),
+            boxShadow: const [AppDesignSystem.softShadow],
           ),
           child: Stack(
             children: [
@@ -115,17 +115,17 @@ class HomeScreen extends StatelessWidget {
                 child: Icon(
                   Icons.notifications_none_rounded,
                   size: 20,
-                  color: Color(0xFF60758B),
+                  color: AppColors.secondaryText,
                 ),
               ),
               Positioned(
-                top: 8,
-                right: 9,
+                top: 9,
+                right: 10,
                 child: Container(
-                  width: 5,
-                  height: 5,
+                  width: 7,
+                  height: 7,
                   decoration: const BoxDecoration(
-                    color: Color(0xFF08B5D0),
+                    color: AppColors.primary,
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -137,10 +137,6 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  // ─────────────────────────────────────────────
-  // CALL ACTIONS
-  // ─────────────────────────────────────────────
-
   Widget _buildCallActions(BuildContext context) {
     return Row(
       children: [
@@ -149,31 +145,21 @@ class HomeScreen extends StatelessWidget {
             title: 'Audio Call',
             icon: Icons.phone_rounded,
             filled: true,
-            onTap: () {
-                context.push('/contacts');
-            },
+            onTap: () => context.push('/contacts'),
           ),
         ),
-
-        const SizedBox(width: 10),
-
+        const SizedBox(width: 12),
         Expanded(
           child: _CallActionCard(
             title: 'Video Call',
             icon: Icons.videocam_rounded,
             filled: false,
-            onTap: () {
-                context.push('/contacts');
-            },
+            onTap: () => context.push('/contacts'),
           ),
         ),
       ],
     );
   }
-
-  // ─────────────────────────────────────────────
-  // ONLINE
-  // ─────────────────────────────────────────────
 
   Widget _buildOnlineSection() {
     final users = [
@@ -192,35 +178,30 @@ class HomeScreen extends StatelessWidget {
             const Text(
               'Online now',
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 15,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF172033),
+                color: AppColors.darkText,
               ),
             ),
             const Spacer(),
             Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 8,
-                vertical: 4,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
               decoration: BoxDecoration(
                 color: const Color(0xFFE8FBF4),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(12),
               ),
               child: const Text(
                 '5 active',
                 style: TextStyle(
-                  fontSize: 9,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
                   color: Color(0xFF0CB47B),
                 ),
               ),
             ),
           ],
         ),
-
-        const SizedBox(height: 12),
-
+        const SizedBox(height: 14),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: users.map((user) {
@@ -236,8 +217,9 @@ class HomeScreen extends StatelessWidget {
                 Text(
                   user.$2,
                   style: const TextStyle(
-                    fontSize: 9,
-                    color: Color(0xFF52657A),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.secondaryText,
                   ),
                 ),
               ],
@@ -248,19 +230,15 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  // ─────────────────────────────────────────────
-  // RECENT CALLS
-  // ─────────────────────────────────────────────
-
   Widget _buildRecentHeader() {
     return Row(
       children: [
         const Text(
           'Recent calls',
           style: TextStyle(
-            fontSize: 13,
+            fontSize: 15,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF172033),
+            color: AppColors.darkText,
           ),
         ),
         const Spacer(),
@@ -269,9 +247,9 @@ class HomeScreen extends StatelessWidget {
           child: const Text(
             'See all',
             style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF08AFCB),
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: AppColors.primaryDark,
             ),
           ),
         ),
@@ -291,7 +269,7 @@ class HomeScreen extends StatelessWidget {
           video: true,
           outgoing: true,
         ),
-        const SizedBox(height: 7),
+        const SizedBox(height: 10),
         _RecentCallTile(
           initials: 'JS',
           name: 'John Smith',
@@ -302,7 +280,7 @@ class HomeScreen extends StatelessWidget {
           outgoing: false,
           missed: true,
         ),
-        const SizedBox(height: 7),
+        const SizedBox(height: 10),
         _RecentCallTile(
           initials: 'AW',
           name: 'Alex Wilson',
@@ -316,10 +294,6 @@ class HomeScreen extends StatelessWidget {
     );
   }
 }
-
-// ═══════════════════════════════════════════════
-// CALL ACTION CARD
-// ═══════════════════════════════════════════════
 
 class _CallActionCard extends StatelessWidget {
   final String title;
@@ -339,57 +313,36 @@ class _CallActionCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 96,
+        height: 102,
         decoration: BoxDecoration(
-          color: filled
-              ? const Color(0xFF08B1D0)
-              : const Color(0xFFEAF8FC),
-          borderRadius: BorderRadius.circular(19),
-          border: filled
-              ? null
-              : Border.all(
-                  color: const Color(0xFF08B1D0),
-                  width: 1,
-                ),
-          boxShadow: filled
-              ? const [
-                  BoxShadow(
-                    color: Color(0x4008B1D0),
-                    blurRadius: 14,
-                    offset: Offset(0, 8),
-                  ),
-                ]
-              : null,
+          color: filled ? AppColors.primary : AppColors.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: filled ? null : Border.all(color: AppColors.cardBorder),
+          boxShadow: const [AppDesignSystem.softShadow],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 38,
-              height: 38,
+              width: 42,
+              height: 42,
               decoration: BoxDecoration(
-                color: filled
-                    ? Colors.white.withOpacity(.18)
-                    : const Color(0xFFD1F3FA),
-                borderRadius: BorderRadius.circular(12),
+                color: filled ? Colors.white.withValues(alpha: 0.18) : AppColors.primarySoft,
+                borderRadius: BorderRadius.circular(14),
               ),
               child: Icon(
                 icon,
-                color: filled
-                    ? Colors.white
-                    : const Color(0xFF08B1D0),
-                size: 19,
+                color: filled ? Colors.white : AppColors.primary,
+                size: 20,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Text(
               title,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 13,
                 fontWeight: FontWeight.w700,
-                color: filled
-                    ? Colors.white
-                    : const Color(0xFF08AFCB),
+                color: filled ? Colors.white : AppColors.primaryDark,
               ),
             ),
           ],
@@ -398,10 +351,6 @@ class _CallActionCard extends StatelessWidget {
     );
   }
 }
-
-// ═══════════════════════════════════════════════
-// RECENT CALL TILE
-// ═══════════════════════════════════════════════
 
 class _RecentCallTile extends StatelessWidget {
   final String initials;
@@ -426,16 +375,16 @@ class _RecentCallTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final metaColor = missed
-        ? const Color(0xFFFF4E55)
-        : const Color(0xFF8CA1B7);
+    final metaColor = missed ? const Color(0xFFFF4E55) : AppColors.secondaryText;
 
     return Container(
-      height: 60,
-      padding: const EdgeInsets.symmetric(horizontal: 11),
+      height: 72,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.cardBorder),
+        boxShadow: const [AppDesignSystem.softShadow],
       ),
       child: Row(
         children: [
@@ -444,9 +393,7 @@ class _RecentCallTile extends StatelessWidget {
             color: color,
             size: 38,
           ),
-
-          const SizedBox(width: 10),
-
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -455,36 +402,31 @@ class _RecentCallTile extends StatelessWidget {
                 Text(
                   name,
                   style: const TextStyle(
-                    fontSize: 11,
+                    fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF27364A),
+                    color: AppColors.darkText,
                   ),
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 4),
                 Row(
                   children: [
                     Icon(
-                      outgoing
-                          ? Icons.north_east_rounded
-                          : Icons.south_west_rounded,
-                      size: 11,
-                      color: missed
-                          ? const Color(0xFFFF4E55)
-                          : const Color(0xFF08B1D0),
+                      outgoing ? Icons.north_east_rounded : Icons.south_west_rounded,
+                      size: 12,
+                      color: missed ? const Color(0xFFFF4E55) : AppColors.primary,
                     ),
                     const SizedBox(width: 3),
                     Icon(
-                      video
-                          ? Icons.videocam_rounded
-                          : Icons.phone_rounded,
-                      size: 10,
+                      video ? Icons.videocam_rounded : Icons.phone_rounded,
+                      size: 11,
                       color: metaColor,
                     ),
                     const SizedBox(width: 4),
                     Text(
                       '$duration · $time',
                       style: TextStyle(
-                        fontSize: 9,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
                         color: metaColor,
                       ),
                     ),
@@ -493,20 +435,17 @@ class _RecentCallTile extends StatelessWidget {
               ],
             ),
           ),
-
           Container(
-            width: 31,
-            height: 31,
+            width: 36,
+            height: 36,
             decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(10),
+              color: AppColors.primarySoft,
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
-              video
-                  ? Icons.videocam_rounded
-                  : Icons.phone_rounded,
-              size: 15,
-              color: const Color(0xFF667B91),
+              video ? Icons.videocam_rounded : Icons.phone_rounded,
+              size: 16,
+              color: AppColors.primaryDark,
             ),
           ),
         ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_design_system.dart';
@@ -6,7 +7,6 @@ import '../../core/theme/app_text_styles.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../widgets/gradient_button.dart';
 import '../../widgets/password_field.dart';
-import 'login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -54,7 +54,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           children: [
                             GestureDetector(
                               onTap: () {
-                                Navigator.pop(context);
+                                context.pop();
                               },
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -136,12 +136,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     GestureDetector(
                       onTap: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const LoginScreen(),
-                          ),
-                        );
+                        context.go('/login');
                       },
                       child: Text('Login', style: AppTextStyles.link),
                     ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme/app_colors.dart';
@@ -8,8 +9,6 @@ import '../../widgets/connect_call_logo.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../widgets/gradient_button.dart';
 import '../../widgets/password_field.dart';
-import 'register_screen.dart';
-import 'package:go_router/go_router.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -97,7 +96,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             GradientButton(
                               text: 'Login',
                               onPressed: () {
-
                                 context.go('/home');
                               },
                             ),
@@ -120,12 +118,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     GestureDetector(
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const RegisterScreen(),
-                          ),
-                        );
+                        context.push('/register');
                       },
                       child: Text('Create Account', style: AppTextStyles.link),
                     ),

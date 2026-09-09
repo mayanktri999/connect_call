@@ -1,12 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../widgets/connect_call_logo.dart';
-import '../auth/login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -34,9 +34,7 @@ class _SplashScreenState extends State<SplashScreen> {
     Timer(const Duration(seconds: 2), () {
       if (!mounted) return;
 
-      Navigator.of(
-        context,
-      ).pushReplacement(MaterialPageRoute(builder: (_) => const LoginScreen()));
+      context.go('/login');
     });
   }
 

@@ -1,36 +1,39 @@
 import 'package:flutter/material.dart';
 
+import '../core/theme/app_colors.dart';
+import '../core/theme/app_design_system.dart';
+
 class AppSearchField extends StatelessWidget {
   final String hintText;
 
-  const AppSearchField({
-    super.key,
-    this.hintText = 'Search people...',
-  });
+  const AppSearchField({super.key, this.hintText = 'Search people...'});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 38,
+      height: 52,
       decoration: BoxDecoration(
-        color: const Color(0xFFF0F5FA),
-        borderRadius: BorderRadius.circular(14),
+        color: AppColors.fieldBackground,
+        borderRadius: AppDesignSystem.mediumRadius,
+        border: Border.all(color: AppColors.fieldBorder, width: 1.2),
       ),
       child: TextField(
         decoration: InputDecoration(
           hintText: hintText,
           hintStyle: const TextStyle(
-            color: Color(0xFF9AAFC3),
-            fontSize: 12,
+            color: AppColors.hintText,
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
           ),
           prefixIcon: const Icon(
-            Icons.search,
-            size: 18,
-            color: Color(0xFF9AAFC3),
+            Icons.search_rounded,
+            size: 19,
+            color: AppColors.secondaryText,
           ),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(
-            vertical: 10,
+            vertical: 14,
+            horizontal: 12,
           ),
         ),
       ),

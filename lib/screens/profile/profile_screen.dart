@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_design_system.dart';
 import '../../widgets/app_bottom_nav.dart';
 import '../../widgets/user_avatar.dart';
 
@@ -10,67 +12,57 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(15, 18, 15, 24),
-                children: [
-                  _buildHeader(),
-
-                  const SizedBox(height: 22),
-
-                  _buildProfile(),
-
-                  const SizedBox(height: 24),
-
-                  _buildStats(),
-
-                  const SizedBox(height: 24),
-
-                  _buildSectionTitle('Account'),
-
-                  const SizedBox(height: 10),
-
-                  _buildAccountCard(),
-
-                  const SizedBox(height: 22),
-
-                  _buildSectionTitle('Settings'),
-
-                  const SizedBox(height: 10),
-
-                  _buildSettingsCard(),
-
-                  const SizedBox(height: 18),
-
-                  _buildLogoutButton(),
-                ],
+      body: Container(
+        decoration: AppDesignSystem.createScreenBackground(),
+        child: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: ListView(
+                  padding: AppDesignSystem.pagePadding.copyWith(
+                    top: 18,
+                    bottom: 24,
+                  ),
+                  children: [
+                    _buildHeader(),
+                    const SizedBox(height: 24),
+                    _buildProfile(),
+                    const SizedBox(height: 20),
+                    _buildStats(),
+                    const SizedBox(height: 24),
+                    _buildSectionTitle('Account'),
+                    const SizedBox(height: 10),
+                    _buildAccountCard(),
+                    const SizedBox(height: 20),
+                    _buildSectionTitle('Settings'),
+                    const SizedBox(height: 10),
+                    _buildSettingsCard(),
+                    const SizedBox(height: 18),
+                    _buildLogoutButton(),
+                  ],
+                ),
               ),
-            ),
-
-            AppBottomNav(
-              currentIndex: 3,
-              onTap: (index) {
-                switch (index) {
-                  case 0:
-                    context.go('/home');
-                    break;
-                  case 1:
-                    context.go('/contacts');
-                    break;
-                  case 2:
-                    context.go('/calls');
-                    break;
-                  case 3:
-                    context.go('/profile');
-                    break;
-                }
-              },
-            ),
-          ],
+              AppBottomNav(
+                currentIndex: 3,
+                onTap: (index) {
+                  switch (index) {
+                    case 0:
+                      context.go('/home');
+                      break;
+                    case 1:
+                      context.go('/contacts');
+                      break;
+                    case 2:
+                      context.go('/calls');
+                      break;
+                    case 3:
+                      context.go('/profile');
+                      break;
+                  }
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -83,24 +75,25 @@ class ProfileScreen extends StatelessWidget {
           child: Text(
             'Profile',
             style: TextStyle(
-              fontSize: 20,
+              fontSize: 28,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF172033),
+              color: AppColors.darkText,
             ),
           ),
         ),
-
         Container(
-          width: 36,
-          height: 36,
+          width: 42,
+          height: 42,
           decoration: BoxDecoration(
-            color: const Color(0xFFEAF8FC),
-            borderRadius: BorderRadius.circular(12),
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.cardBorder),
+            boxShadow: const [AppDesignSystem.softShadow],
           ),
           child: const Icon(
             Icons.edit_rounded,
-            size: 18,
-            color: Color(0xFF08B1D0),
+            size: 19,
+            color: AppColors.primary,
           ),
         ),
       ],
@@ -108,74 +101,81 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildProfile() {
-    return Column(
-      children: [
-        Stack(
-          clipBehavior: Clip.none,
-          children: [
-            const UserAvatar(
-              initials: 'MS',
-              color: Color(0xFF19B5D3),
-              online: true,
-              size: 92,
-            ),
-
-            Positioned(
-              right: -2,
-              bottom: 2,
-              child: Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF08B1D0),
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: const Color(0xFFF8FAFC),
-                    width: 3,
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 22),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.cardBorder),
+        boxShadow: const [AppDesignSystem.softShadow],
+      ),
+      child: Column(
+        children: [
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              const UserAvatar(
+                initials: 'MS',
+                color: AppColors.primary,
+                online: true,
+                size: 92,
+              ),
+              Positioned(
+                right: -2,
+                bottom: 2,
+                child: Container(
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.surface, width: 3),
+                  ),
+                  child: const Icon(
+                    Icons.edit_rounded,
+                    size: 14,
+                    color: Colors.white,
                   ),
                 ),
-                child: const Icon(
-                  Icons.edit_rounded,
-                  size: 13,
-                  color: Colors.white,
-                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          const Text(
+            'Mayank',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: AppColors.darkText,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE9FBF3),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: const Text(
+              'Online',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF10B981),
               ),
             ),
-          ],
-        ),
-
-        const SizedBox(height: 12),
-
-        const Text(
-          'Mayank',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF172033),
           ),
-        ),
-
-        const SizedBox(height: 4),
-
-        const Text(
-          'Online',
-          style: TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF10B981),
+          const SizedBox(height: 8),
+          const Text(
+            'mayank@example.com',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: AppColors.secondaryText,
+            ),
           ),
-        ),
-
-        const SizedBox(height: 4),
-
-        const Text(
-          'mayank@example.com',
-          style: TextStyle(
-            fontSize: 10,
-            color: Color(0xFF8A9CAE),
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -183,49 +183,35 @@ class ProfileScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 18),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: const Color(0xFFEAF0F5),
-        ),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.cardBorder),
+        boxShadow: const [AppDesignSystem.softShadow],
       ),
       child: Row(
         children: [
-          _StatItem(
-            value: '24',
-            label: 'Contacts',
-          ),
+          _StatItem(value: '24', label: 'Contacts'),
           _verticalDivider(),
-          _StatItem(
-            value: '128',
-            label: 'Calls',
-          ),
+          _StatItem(value: '128', label: 'Calls'),
           _verticalDivider(),
-          _StatItem(
-            value: '16',
-            label: 'This week',
-          ),
+          _StatItem(value: '16', label: 'This week'),
         ],
       ),
     );
   }
 
   Widget _verticalDivider() {
-    return Container(
-      width: 1,
-      height: 30,
-      color: const Color(0xFFE8EEF3),
-    );
+    return Container(width: 1, height: 30, color: AppColors.cardBorder);
   }
 
   Widget _buildSectionTitle(String title) {
     return Text(
       title.toUpperCase(),
       style: const TextStyle(
-        fontSize: 10,
+        fontSize: 11,
         fontWeight: FontWeight.w700,
         letterSpacing: .8,
-        color: Color(0xFF7D91A7),
+        color: AppColors.labelText,
       ),
     );
   }
@@ -233,11 +219,10 @@ class ProfileScreen extends StatelessWidget {
   Widget _buildAccountCard() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(17),
-        border: Border.all(
-          color: const Color(0xFFEAF0F5),
-        ),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.cardBorder),
+        boxShadow: const [AppDesignSystem.softShadow],
       ),
       child: Column(
         children: [
@@ -267,11 +252,10 @@ class ProfileScreen extends StatelessWidget {
   Widget _buildSettingsCard() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(17),
-        border: Border.all(
-          color: const Color(0xFFEAF0F5),
-        ),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.cardBorder),
+        boxShadow: const [AppDesignSystem.softShadow],
       ),
       child: Column(
         children: [
@@ -301,27 +285,21 @@ class ProfileScreen extends StatelessWidget {
     return GestureDetector(
       onTap: () {},
       child: Container(
-        height: 48,
+        height: 52,
         decoration: BoxDecoration(
           color: const Color(0xFFFFF1F2),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: const Color(0xFFFFD9DC),
-          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFFFD9DC)),
         ),
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.logout_rounded,
-              size: 17,
-              color: Color(0xFFE54850),
-            ),
+            Icon(Icons.logout_rounded, size: 18, color: Color(0xFFE54850)),
             SizedBox(width: 8),
             Text(
               'Log out',
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 12,
                 fontWeight: FontWeight.w700,
                 color: Color(0xFFE54850),
               ),
@@ -337,7 +315,7 @@ class ProfileScreen extends StatelessWidget {
       height: 1,
       indent: 50,
       endIndent: 15,
-      color: Color(0xFFEAF0F5),
+      color: AppColors.cardBorder,
     );
   }
 }
@@ -346,10 +324,7 @@ class _StatItem extends StatelessWidget {
   final String value;
   final String label;
 
-  const _StatItem({
-    required this.value,
-    required this.label,
-  });
+  const _StatItem({required this.value, required this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -359,17 +334,18 @@ class _StatItem extends StatelessWidget {
           Text(
             value,
             style: const TextStyle(
-              fontSize: 17,
+              fontSize: 20,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF172033),
+              color: AppColors.darkText,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             label,
             style: const TextStyle(
-              fontSize: 9,
-              color: Color(0xFF8A9CAE),
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+              color: AppColors.secondaryText,
             ),
           ),
         ],
@@ -398,43 +374,33 @@ class _ProfileRow extends StatelessWidget {
       child: Row(
         children: [
           const SizedBox(width: 15),
-
           Container(
-            width: 31,
-            height: 31,
+            width: 34,
+            height: 34,
             decoration: BoxDecoration(
-              color: const Color(0xFFEAF8FC),
-              borderRadius: BorderRadius.circular(10),
+              color: AppColors.primarySoft,
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(
-              icon,
-              size: 16,
-              color: const Color(0xFF08B1D0),
-            ),
+            child: Icon(icon, size: 16, color: AppColors.primary),
           ),
-
           const SizedBox(width: 11),
-
           Text(
             title,
             style: const TextStyle(
-              fontSize: 10,
+              fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF64788D),
+              color: AppColors.secondaryText,
             ),
           ),
-
           const Spacer(),
-
           Text(
             value,
             style: TextStyle(
-              fontSize: 10,
+              fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: valueColor ?? const Color(0xFF27364A),
+              color: valueColor ?? AppColors.darkText,
             ),
           ),
-
           const SizedBox(width: 15),
         ],
       ),
@@ -462,32 +428,23 @@ class _ActionRow extends StatelessWidget {
         child: Row(
           children: [
             const SizedBox(width: 15),
-
-            Icon(
-              icon,
-              size: 19,
-              color: const Color(0xFF71869A),
-            ),
-
+            Icon(icon, size: 18, color: AppColors.secondaryText),
             const SizedBox(width: 13),
-
             Expanded(
               child: Text(
                 title,
                 style: const TextStyle(
-                  fontSize: 10.5,
+                  fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF27364A),
+                  color: AppColors.darkText,
                 ),
               ),
             ),
-
             const Icon(
               Icons.chevron_right_rounded,
               size: 18,
-              color: Color(0xFF9AABBA),
+              color: AppColors.secondaryText,
             ),
-
             const SizedBox(width: 12),
           ],
         ),

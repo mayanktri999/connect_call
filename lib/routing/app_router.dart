@@ -1,14 +1,13 @@
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../screens/calls/call_history_screen.dart';
-import '../screens/contacts/contacts_screen.dart';
-
-import '../screens/home/home_screen.dart';
-import '../screens/profile/profile_screen.dart';
-// Import your existing auth screens
+import '../screens/calls/incoming_call_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
+import '../screens/calls/call_history_screen.dart';
+import '../screens/contacts/contacts_screen.dart';
+import '../screens/home/home_screen.dart';
+import '../screens/profile/profile_screen.dart';
 import '../screens/splash/splash_screen.dart';
+import '../screens/calls/audio_call_screen.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/splash',
@@ -26,11 +25,20 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const LoginScreen(),
     ),
     GoRoute(
-       path: '/calls',
-        name: 'calls',
-        builder: (context, state) => const CallHistoryScreen(),
+      path: '/calls',
+      name: 'calls',
+      builder: (context, state) => const CallHistoryScreen(),
+    ),
+    GoRoute(
+           path: '/audio-call',
+           name: 'audio-call',
+                builder: (context, state) => const AudioCallScreen(),
           ),
-
+    GoRoute(
+        path: '/incoming-call',
+        name: 'incoming-call',
+        builder: (context, state) => const IncomingCallScreen(),
+          ),
     GoRoute(
       path: '/register',
       name: 'register',

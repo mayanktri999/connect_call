@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_design_system.dart';
 import '../../widgets/app_bottom_nav.dart';
 import '../../widgets/user_avatar.dart';
 
@@ -14,12 +16,7 @@ class CallHistoryScreen extends StatefulWidget {
 class _CallHistoryScreenState extends State<CallHistoryScreen> {
   int selectedFilter = 0;
 
-  final filters = const [
-    'All',
-    'Missed',
-    'Incoming',
-    'Outgoing',
-  ];
+  final filters = const ['All', 'Missed', 'Incoming', 'Outgoing'];
 
   final calls = const [
     _Call(
@@ -86,61 +83,54 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(
-                  15,
-                  18,
-                  15,
-                  20,
-                ),
-                children: [
-                  _buildHeader(),
-
-                  const SizedBox(height: 18),
-
-                  _buildFilters(),
-
-                  const SizedBox(height: 22),
-
-                  _buildSectionLabel(),
-
-                  const SizedBox(height: 10),
-
-                  ...filteredCalls.map(
-                    (call) => Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: _CallHistoryTile(call: call),
-                    ),
+      body: Container(
+        decoration: AppDesignSystem.createScreenBackground(),
+        child: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: ListView(
+                  padding: AppDesignSystem.pagePadding.copyWith(
+                    top: 18,
+                    bottom: 20,
                   ),
-                ],
+                  children: [
+                    _buildHeader(),
+                    const SizedBox(height: 18),
+                    _buildFilters(),
+                    const SizedBox(height: 22),
+                    _buildSectionLabel(),
+                    const SizedBox(height: 12),
+                    ...filteredCalls.map(
+                      (call) => Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _CallHistoryTile(call: call),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-
-            AppBottomNav(
-              currentIndex: 2,
-              onTap: (index) {
-                switch (index) {
-                  case 0:
-                    context.go('/home');
-                    break;
-                  case 1:
-                    context.go('/contacts');
-                    break;
-                  case 2:
-                    context.go('/calls');
-                    break;
-                  case 3:
-                    context.go('/profile');
-                    break;
-                }
-              },
-            ),
-          ],
+              AppBottomNav(
+                currentIndex: 2,
+                onTap: (index) {
+                  switch (index) {
+                    case 0:
+                      context.go('/home');
+                      break;
+                    case 1:
+                      context.go('/contacts');
+                      break;
+                    case 2:
+                      context.go('/calls');
+                      break;
+                    case 3:
+                      context.go('/profile');
+                      break;
+                  }
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -153,24 +143,25 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
           child: Text(
             'Call History',
             style: TextStyle(
-              fontSize: 20,
+              fontSize: 28,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF172033),
+              color: AppColors.darkText,
             ),
           ),
         ),
-
         Container(
-          width: 36,
-          height: 36,
+          width: 42,
+          height: 42,
           decoration: BoxDecoration(
-            color: const Color(0xFFEAF8FC),
-            borderRadius: BorderRadius.circular(12),
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.cardBorder),
+            boxShadow: const [AppDesignSystem.softShadow],
           ),
           child: const Icon(
             Icons.search_rounded,
-            size: 19,
-            color: Color(0xFF08B1D0),
+            size: 20,
+            color: AppColors.primary,
           ),
         ),
       ],
@@ -181,53 +172,46 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
-        children: List.generate(
-          filters.length,
-          (index) {
-            final selected = selectedFilter == index;
-
-            return Padding(
-              padding: EdgeInsets.only(
-                right: index == filters.length - 1 ? 0 : 8,
-              ),
-              child: GestureDetector(
-                onTap: () {
-                  setState(() {
-                    selectedFilter = index;
-                  });
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 15,
-                    vertical: 9,
+        children: List.generate(filters.length, (index) {
+          final selected = selectedFilter == index;
+          return Padding(
+            padding: EdgeInsets.only(
+              right: index == filters.length - 1 ? 0 : 8,
+            ),
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  selectedFilter = index;
+                });
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 15,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: selected ? AppColors.primary : AppColors.surface,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: selected ? AppColors.primary : AppColors.cardBorder,
                   ),
-                  decoration: BoxDecoration(
-                    color: selected
-                        ? const Color(0xFF08B1D0)
-                        : Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: selected
-                          ? const Color(0xFF08B1D0)
-                          : const Color(0xFFE5ECF2),
-                    ),
-                  ),
-                  child: Text(
-                    filters[index],
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: selected
-                          ? Colors.white
-                          : const Color(0xFF71869A),
-                    ),
+                  boxShadow: selected
+                      ? const [AppDesignSystem.softShadow]
+                      : null,
+                ),
+                child: Text(
+                  filters[index],
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: selected ? Colors.white : AppColors.secondaryText,
                   ),
                 ),
               ),
-            );
-          },
-        ),
+            ),
+          );
+        }),
       ),
     );
   }
@@ -238,18 +222,19 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
         const Text(
           'RECENT',
           style: TextStyle(
-            fontSize: 10,
+            fontSize: 11,
             fontWeight: FontWeight.w700,
             letterSpacing: .8,
-            color: Color(0xFF7D91A7),
+            color: AppColors.labelText,
           ),
         ),
         const SizedBox(width: 7),
         Text(
           '${filteredCalls.length}',
           style: const TextStyle(
-            fontSize: 9,
-            color: Color(0xFF9AABBA),
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            color: AppColors.primaryDark,
           ),
         ),
       ],
@@ -260,18 +245,12 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
 class _CallHistoryTile extends StatelessWidget {
   final _Call call;
 
-  const _CallHistoryTile({
-    required this.call,
-  });
+  const _CallHistoryTile({required this.call});
 
   @override
   Widget build(BuildContext context) {
     final missed = call.type == CallType.missed;
-
-    final statusColor = missed
-        ? const Color(0xFFFF5258)
-        : const Color(0xFF08B1D0);
-
+    final statusColor = missed ? const Color(0xFFFF5258) : AppColors.primary;
     final directionIcon = switch (call.type) {
       CallType.incoming => Icons.south_west_rounded,
       CallType.outgoing => Icons.north_east_rounded,
@@ -279,25 +258,18 @@ class _CallHistoryTile extends StatelessWidget {
     };
 
     return Container(
-      height: 72,
-      padding: const EdgeInsets.symmetric(horizontal: 11),
+      height: 78,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFEAF0F5),
-        ),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.cardBorder),
+        boxShadow: const [AppDesignSystem.softShadow],
       ),
       child: Row(
         children: [
-          UserAvatar(
-            initials: call.initials,
-            color: call.color,
-            size: 42,
-          ),
-
-          const SizedBox(width: 11),
-
+          UserAvatar(initials: call.initials, color: call.color, size: 42),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -306,51 +278,40 @@ class _CallHistoryTile extends StatelessWidget {
                 Text(
                   call.name,
                   style: const TextStyle(
-                    fontSize: 11.5,
+                    fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF26364A),
+                    color: AppColors.darkText,
                   ),
                 ),
-
                 const SizedBox(height: 4),
-
                 Row(
                   children: [
-                    Icon(
-                      directionIcon,
-                      size: 11,
-                      color: statusColor,
-                    ),
-
+                    Icon(directionIcon, size: 11, color: statusColor),
                     const SizedBox(width: 4),
-
                     Icon(
                       call.mode == CallMode.video
                           ? Icons.videocam_rounded
                           : Icons.phone_rounded,
                       size: 10,
-                      color: const Color(0xFF8A9CAE),
+                      color: AppColors.secondaryText,
                     ),
-
                     const SizedBox(width: 5),
-
                     Text(
                       call.duration,
                       style: TextStyle(
-                        fontSize: 9,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
                         color: missed
                             ? const Color(0xFFFF5258)
-                            : const Color(0xFF8A9CAE),
+                            : AppColors.secondaryText,
                       ),
                     ),
-
                     const SizedBox(width: 5),
-
                     Text(
                       '• ${call.date}',
                       style: const TextStyle(
-                        fontSize: 9,
-                        color: Color(0xFF9AABBA),
+                        fontSize: 10,
+                        color: AppColors.labelText,
                       ),
                     ),
                   ],
@@ -358,20 +319,19 @@ class _CallHistoryTile extends StatelessWidget {
               ],
             ),
           ),
-
           Container(
-            width: 32,
-            height: 32,
+            width: 38,
+            height: 38,
             decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(10),
+              color: AppColors.primarySoft,
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
               call.mode == CallMode.video
                   ? Icons.videocam_rounded
                   : Icons.phone_rounded,
-              size: 15,
-              color: const Color(0xFF667B91),
+              size: 16,
+              color: AppColors.primaryDark,
             ),
           ),
         ],
@@ -380,16 +340,9 @@ class _CallHistoryTile extends StatelessWidget {
   }
 }
 
-enum CallType {
-  incoming,
-  outgoing,
-  missed,
-}
+enum CallType { incoming, outgoing, missed }
 
-enum CallMode {
-  audio,
-  video,
-}
+enum CallMode { audio, video }
 
 class _Call {
   final String name;

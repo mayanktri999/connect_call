@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_design_system.dart';
 import '../../widgets/app_bottom_nav.dart';
 import '../../widgets/search_field.dart';
 import '../../widgets/user_avatar.dart';
+import '../contacts/contacts_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -28,7 +30,7 @@ class HomeScreen extends StatelessWidget {
 
                     const SizedBox(height: 28),
 
-                    _buildCallActions(),
+                    _buildCallActions(context),
 
                     const SizedBox(height: 21),
 
@@ -139,7 +141,7 @@ class HomeScreen extends StatelessWidget {
   // CALL ACTIONS
   // ─────────────────────────────────────────────
 
-  Widget _buildCallActions() {
+  Widget _buildCallActions(BuildContext context) {
     return Row(
       children: [
         Expanded(
@@ -147,7 +149,9 @@ class HomeScreen extends StatelessWidget {
             title: 'Audio Call',
             icon: Icons.phone_rounded,
             filled: true,
-            onTap: () {},
+            onTap: () {
+                context.push('/contacts');
+            },
           ),
         ),
 
@@ -158,7 +162,9 @@ class HomeScreen extends StatelessWidget {
             title: 'Video Call',
             icon: Icons.videocam_rounded,
             filled: false,
-            onTap: () {},
+            onTap: () {
+                context.push('/contacts');
+            },
           ),
         ),
       ],

@@ -1,0 +1,40 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+import '../../models/user_model.dart';
+
+class UserService {
+  UserService._();
+
+  static final UserService instance = UserService._();
+
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  CollectionReference<Map<String, dynamic>> get _users =>
+      _firestore.collection('users');
+
+  Future<void> createUser(UserModel user) async {
+    await _users.doc(user.uid).set(user.toMap());
+  }
+
+  Future<UserModel?> getUser(String uid) async {
+    final document = await _users.doc(uid).get();
+
+    if (!document.exists || document.data() == null) {
+      return null;
+    }
+
+    return UserModel.fromMap(
+      document.id,
+      document.data()!,
+    );
+  }
+
+  Future<void> updateOnlineStatus(
+    String uid,
+    bool isOnline,
+  ) async {
+    await _users.doc(uid).update({
+      'isOnline': isOnline,
+    });
+  }
+}

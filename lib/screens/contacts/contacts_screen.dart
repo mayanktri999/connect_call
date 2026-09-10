@@ -1,10 +1,16 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_design_system.dart';
+
+import '../../models/call_model.dart';
+import '../../models/user_model.dart';
+import '../auth/user_service.dart';
+import '../calls/call_services.dart';
 import '../../widgets/app_bottom_nav.dart';
-import '../../widgets/search_field.dart';
+
 import '../../widgets/user_avatar.dart';
 
 class ContactsScreen extends StatefulWidget {
@@ -17,51 +23,20 @@ class ContactsScreen extends StatefulWidget {
 class _ContactsScreenState extends State<ContactsScreen> {
   int selectedNavIndex = 1;
 
-  final List<_Contact> onlineContacts = [
-    _Contact(
-      name: 'Sarah Johnson',
-      status: 'Available',
-      initials: 'SJ',
-      color: Color(0xFF22A8E0),
-    ),
-    _Contact(
-      name: 'Alex Wilson',
-      status: 'Available',
-      initials: 'AW',
-      color: Color(0xFF20B989),
-    ),
-    _Contact(
-      name: 'Emma Davis',
-      status: 'Busy',
-      initials: 'ED',
-      color: Color(0xFFF5A51C),
-      busy: true,
-    ),
-    _Contact(
-      name: 'Priya Patel',
-      status: 'Available',
-      initials: 'PP',
-      color: Color(0xFFE84C91),
-    ),
-  ];
-
-  final List<_Contact> offlineContacts = [
-    _Contact(
-      name: 'John Smith',
-      status: 'Offline',
-      initials: 'JS',
-      color: Color(0xFF8A5CF5),
-    ),
-    _Contact(
-      name: 'David Miller',
-      status: 'Offline',
-      initials: 'DM',
-      color: Color(0xFF607D8B),
-    ),
-  ];
+  String searchQuery = '';
 
   @override
   Widget build(BuildContext context) {
+    final currentUser = FirebaseAuth.instance.currentUser;
+
+    if (currentUser == null) {
+      return const Scaffold(
+        body: Center(
+          child: Text('Please login again.'),
+        ),
+      );
+    }
+
     return Scaffold(
       body: Container(
         decoration: AppDesignSystem.createScreenBackground(),
@@ -69,34 +44,129 @@ class _ContactsScreenState extends State<ContactsScreen> {
           child: Column(
             children: [
               Expanded(
-                child: ListView(
-                  padding: AppDesignSystem.pagePadding.copyWith(
-                    top: 18,
-                    bottom: 20,
+                child: StreamBuilder<List<UserModel>>(
+                  stream: UserService.instance.getUsers(
+                    currentUserId: currentUser.uid,
                   ),
-                  children: [
-                    _buildHeader(),
-                    const SizedBox(height: 18),
-                    const AppSearchField(hintText: 'Search contacts...'),
-                    const SizedBox(height: 22),
-                    _buildSectionTitle('Online', '${onlineContacts.length}'),
-                    const SizedBox(height: 10),
-                    ...onlineContacts.map(
-                      (contact) => Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: _ContactTile(contact: contact),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState ==
+                        ConnectionState.waiting) {
+                      return const Center(
+                        child: CircularProgressIndicator(),
+                      );
+                    }
+
+                    if (snapshot.hasError) {
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Text(
+                            'Unable to load contacts.\n\n${snapshot.error}',
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      );
+                    }
+
+                    final users = snapshot.data ?? [];
+
+                    final filteredUsers = users.where((user) {
+                      final query = searchQuery.toLowerCase();
+
+                      return user.name.toLowerCase().contains(query) ||
+                          user.email.toLowerCase().contains(query);
+                    }).toList();
+
+                    final onlineUsers = filteredUsers
+                        .where((user) => user.isOnline)
+                        .toList();
+
+                    final offlineUsers = filteredUsers
+                        .where((user) => !user.isOnline)
+                        .toList();
+
+                    return ListView(
+                      padding: AppDesignSystem.pagePadding.copyWith(
+                        top: 18,
+                        bottom: 20,
                       ),
-                    ),
-                    const SizedBox(height: 18),
-                    _buildSectionTitle('Offline', '${offlineContacts.length}'),
-                    const SizedBox(height: 10),
-                    ...offlineContacts.map(
-                      (contact) => Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: _ContactTile(contact: contact),
-                      ),
-                    ),
-                  ],
+                      children: [
+                        _buildHeader(),
+
+                        const SizedBox(height: 18),
+
+                        _SearchField(
+                          onChanged: (value) {
+                            setState(() {
+                              searchQuery = value;
+                            });
+                          },
+                        ),
+
+                        const SizedBox(height: 22),
+
+                        _buildSectionTitle(
+                          'Online',
+                          '${onlineUsers.length}',
+                        ),
+
+                        const SizedBox(height: 10),
+
+                        if (onlineUsers.isEmpty)
+                          _buildEmptyMessage(
+                            'No online contacts',
+                          )
+                        else
+                          ...onlineUsers.map(
+                            (user) => Padding(
+                              padding:
+                                  const EdgeInsets.only(bottom: 10),
+                              child: _ContactTile(
+                                user: user,
+                                onAudioCall: () {
+                                  _startCall(
+                                    user,
+                                    CallType.audio,
+                                  );
+                                },
+                                onVideoCall: () {
+                                  _startCall(
+                                    user,
+                                    CallType.video,
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+
+                        const SizedBox(height: 18),
+
+                        _buildSectionTitle(
+                          'Offline',
+                          '${offlineUsers.length}',
+                        ),
+
+                        const SizedBox(height: 10),
+
+                        if (offlineUsers.isEmpty)
+                          _buildEmptyMessage(
+                            'No offline contacts',
+                          )
+                        else
+                          ...offlineUsers.map(
+                            (user) => Padding(
+                              padding:
+                                  const EdgeInsets.only(bottom: 10),
+                              child: _ContactTile(
+                                user: user,
+                                onAudioCall: null,
+                                onVideoCall: null,
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
                 ),
               ),
 
@@ -111,12 +181,15 @@ class _ContactsScreenState extends State<ContactsScreen> {
                     case 0:
                       context.go('/home');
                       break;
+
                     case 1:
                       context.go('/contacts');
                       break;
+
                     case 2:
                       context.go('/calls');
                       break;
+
                     case 3:
                       context.go('/profile');
                       break;
@@ -129,6 +202,60 @@ class _ContactsScreenState extends State<ContactsScreen> {
       ),
     );
   }
+
+  // ----------------------------------------------------------
+  // START CALL
+  // ----------------------------------------------------------
+
+  Future<void> _startCall(
+    UserModel user,
+    CallType type,
+  ) async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+
+    if (currentUser == null) {
+      _showMessage('Please login again.');
+      return;
+    }
+
+    try {
+      final callId = await CallService.instance.createCall(
+        callerId: currentUser.uid,
+        receiverId: user.uid,
+        type: type,
+      );
+
+      if (!mounted) return;
+
+      if (type == CallType.audio) {
+        context.push(
+          '/audio-call',
+          extra: {
+            'callId': callId,
+            'receiver': user,
+          },
+        );
+      } else {
+        context.push(
+          '/video-call',
+          extra: {
+            'callId': callId,
+            'receiver': user,
+          },
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      _showMessage(
+        'Unable to start call: $e',
+      );
+    }
+  }
+
+  // ----------------------------------------------------------
+  // HEADER
+  // ----------------------------------------------------------
 
   Widget _buildHeader() {
     return Row(
@@ -143,13 +270,16 @@ class _ContactsScreenState extends State<ContactsScreen> {
             ),
           ),
         ),
+
         Container(
           width: 42,
           height: 42,
           decoration: BoxDecoration(
             color: AppColors.primarySoft,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.cardBorder),
+            border: Border.all(
+              color: AppColors.cardBorder,
+            ),
           ),
           child: const Icon(
             Icons.person_add_alt_1_rounded,
@@ -161,7 +291,14 @@ class _ContactsScreenState extends State<ContactsScreen> {
     );
   }
 
-  Widget _buildSectionTitle(String title, String count) {
+  // ----------------------------------------------------------
+  // SECTION TITLE
+  // ----------------------------------------------------------
+
+  Widget _buildSectionTitle(
+    String title,
+    String count,
+  ) {
     return Row(
       children: [
         Text(
@@ -173,9 +310,14 @@ class _ContactsScreenState extends State<ContactsScreen> {
             color: AppColors.labelText,
           ),
         ),
+
         const SizedBox(width: 8),
+
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 8,
+            vertical: 4,
+          ),
           decoration: BoxDecoration(
             color: AppColors.primarySoft,
             borderRadius: BorderRadius.circular(10),
@@ -192,24 +334,120 @@ class _ContactsScreenState extends State<ContactsScreen> {
       ],
     );
   }
+
+  // ----------------------------------------------------------
+  // EMPTY MESSAGE
+  // ----------------------------------------------------------
+
+  Widget _buildEmptyMessage(String message) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        vertical: 22,
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        message,
+        style: const TextStyle(
+          fontSize: 13,
+          color: AppColors.secondaryText,
+        ),
+      ),
+    );
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+      ),
+    );
+  }
 }
 
-class _ContactTile extends StatelessWidget {
-  final _Contact contact;
+// ============================================================
+// SEARCH FIELD
+// ============================================================
 
-  const _ContactTile({required this.contact});
+class _SearchField extends StatelessWidget {
+  final ValueChanged<String> onChanged;
+
+  const _SearchField({
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final bool online = contact.status != 'Offline';
+    return TextField(
+      onChanged: onChanged,
+      decoration: InputDecoration(
+        hintText: 'Search contacts...',
+        prefixIcon: const Icon(
+          Icons.search_rounded,
+          color: AppColors.secondaryText,
+        ),
+        filled: true,
+        fillColor: AppColors.fieldBackground,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 18,
+          vertical: 14,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(
+            color: AppColors.fieldBorder,
+          ),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(
+            color: AppColors.fieldBorder,
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(
+            color: AppColors.primary,
+            width: 1.5,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================
+// CONTACT TILE
+// ============================================================
+
+class _ContactTile extends StatelessWidget {
+  final UserModel user;
+  final VoidCallback? onAudioCall;
+  final VoidCallback? onVideoCall;
+
+  const _ContactTile({
+    required this.user,
+    required this.onAudioCall,
+    required this.onVideoCall,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bool online = user.isOnline;
+
+    final initials = _getInitials(user.name);
 
     return Container(
       height: 74,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 10,
+      ),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.cardBorder),
+        border: Border.all(
+          color: AppColors.cardBorder,
+        ),
         boxShadow: const [
           BoxShadow(
             color: AppColors.shadow,
@@ -221,19 +459,23 @@ class _ContactTile extends StatelessWidget {
       child: Row(
         children: [
           UserAvatar(
-            initials: contact.initials,
-            color: contact.color,
+            initials: initials,
+            color: AppColors.primary,
             online: online,
             size: 42,
           ),
+
           const SizedBox(width: 12),
+
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  contact.name,
+                  user.name.isEmpty
+                      ? 'Unknown User'
+                      : user.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -242,7 +484,9 @@ class _ContactTile extends StatelessWidget {
                     color: AppColors.darkText,
                   ),
                 ),
+
                 const SizedBox(height: 4),
+
                 Row(
                   children: [
                     Container(
@@ -250,16 +494,16 @@ class _ContactTile extends StatelessWidget {
                       height: 7,
                       decoration: BoxDecoration(
                         color: online
-                            ? contact.busy
-                                  ? const Color(0xFFF5A51C)
-                                  : const Color(0xFF10B981)
+                            ? const Color(0xFF10B981)
                             : const Color(0xFF9AA9B8),
                         shape: BoxShape.circle,
                       ),
                     ),
+
                     const SizedBox(width: 6),
+
                     Text(
-                      contact.status,
+                      online ? 'Available' : 'Offline',
                       style: const TextStyle(
                         fontSize: 11,
                         color: AppColors.secondaryText,
@@ -271,31 +515,55 @@ class _ContactTile extends StatelessWidget {
               ],
             ),
           ),
+
           _CallIconButton(
             icon: Icons.phone_rounded,
             enabled: online,
-            onTap: () {
-              // Audio call will be connected later.
-            },
+            onTap: onAudioCall,
           ),
+
           const SizedBox(width: 8),
+
           _CallIconButton(
             icon: Icons.videocam_rounded,
             enabled: online,
-            onTap: () {
-              // Video call will be connected later.
-            },
+            onTap: onVideoCall,
           ),
         ],
       ),
     );
   }
+
+  String _getInitials(String name) {
+    final parts = name
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((part) => part.isNotEmpty)
+        .toList();
+
+    if (parts.isEmpty) {
+      return '?';
+    }
+
+    if (parts.length == 1) {
+      return parts.first.substring(
+        0,
+        parts.first.length >= 2 ? 2 : 1,
+      ).toUpperCase();
+    }
+
+    return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
+  }
 }
+
+// ============================================================
+// CALL BUTTON
+// ============================================================
 
 class _CallIconButton extends StatelessWidget {
   final IconData icon;
   final bool enabled;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const _CallIconButton({
     required this.icon,
@@ -311,31 +579,19 @@ class _CallIconButton extends StatelessWidget {
         width: 31,
         height: 31,
         decoration: BoxDecoration(
-          color: enabled ? const Color(0xFFEAF8FC) : const Color(0xFFF3F5F7),
+          color: enabled
+              ? const Color(0xFFEAF8FC)
+              : const Color(0xFFF3F5F7),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(
           icon,
           size: 15,
-          color: enabled ? const Color(0xFF08B1D0) : const Color(0xFFB5C0CA),
+          color: enabled
+              ? const Color(0xFF08B1D0)
+              : const Color(0xFFB5C0CA),
         ),
       ),
     );
   }
-}
-
-class _Contact {
-  final String name;
-  final String status;
-  final String initials;
-  final Color color;
-  final bool busy;
-
-  const _Contact({
-    required this.name,
-    required this.status,
-    required this.initials,
-    required this.color,
-    this.busy = false,
-  });
 }

@@ -51,10 +51,11 @@ final GoRouter appRouter = GoRouter(
       name: 'calls',
       builder: (context, state) => const CallHistoryScreen(),
     ),
+   
     GoRoute(
-           path: '/audio-call',
-           name: 'audio-call',
-                builder: (context, state) => const AudioCallScreen(),
+           path: '/vedio-call',
+           name: 'vedio-call',
+                builder: (context, state) => const VideoCallScreen(),
           ),
     GoRoute(
         path: '/incoming-call',

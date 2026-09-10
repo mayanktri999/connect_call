@@ -4,6 +4,22 @@ import '../../models/user_model.dart';
 
 class UserService {
   UserService._();
+  Stream<List<UserModel>> getUsers({
+  required String currentUserId,
+}) {
+  return _users
+      .where('uid', isNotEqualTo: currentUserId)
+      .snapshots()
+      .map((snapshot) {
+    return snapshot.docs.map((document) {
+      return UserModel.fromMap(
+        document.id,
+        document.data(),
+      );
+    }).toList();
+  });
+}
+  
 
   static final UserService instance = UserService._();
 

@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_design_system.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../auth/user_service.dart';
 import '../../widgets/connect_call_logo.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../widgets/gradient_button.dart';
@@ -81,7 +82,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               label: 'Email or Phone',
                               hint: 'mayank@connectcall.io',
                               controller: emailController,
-                              keyboardType: TextInputType.emailAddress,
+                              keyboardType:
+                                  TextInputType.emailAddress,
                             ),
 
                             const SizedBox(height: 18),
@@ -112,8 +114,11 @@ class _LoginScreenState extends State<LoginScreen> {
                             const SizedBox(height: 22),
 
                             GradientButton(
-                              text: _isLoading ? 'Logging in...' : 'Login',
-                              onPressed: _isLoading ? null : _login,
+                              text: _isLoading
+                                  ? 'Logging in...'
+                                  : 'Login',
+                              onPressed:
+                                  _isLoading ? null : _login,
                             ),
                           ],
                         ),
@@ -125,7 +130,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 18),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 18),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -226,7 +232,10 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      // Sign in with Firebase
+      // ------------------------------------------------------
+      // SIGN IN WITH FIREBASE
+      // ------------------------------------------------------
+
       final credential =
           await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
@@ -240,7 +249,7 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
-      // Refresh Firebase user information
+      // Refresh Firebase user information.
       await user.reload();
 
       final refreshedUser =
@@ -264,7 +273,16 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       // ------------------------------------------------------
-      // VERIFIED USER
+      // SET USER ONLINE
+      // ------------------------------------------------------
+
+      await UserService.instance.updateOnlineStatus(
+        refreshedUser.uid,
+        true,
+      );
+
+      // ------------------------------------------------------
+      // LOGIN SUCCESSFUL
       // ------------------------------------------------------
 
       if (!mounted) return;

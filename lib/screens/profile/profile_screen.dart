@@ -10,6 +10,7 @@ import '../auth/user_service.dart';
 import '../../widgets/app_bottom_nav.dart';
 import '../../widgets/user_avatar.dart';
 
+
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -378,7 +379,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildLogoutButton(BuildContext context) {
     return GestureDetector(
       onTap: () async {
-        await AuthService.instance.logout();
+       final user = FirebaseAuth.instance.currentUser;
+
+if (user != null) {
+  await UserService.instance.updateOnlineStatus(
+    user.uid,
+    false,
+  );
+}
+
+await AuthService.instance.logout();
 
         if (!context.mounted) return;
 

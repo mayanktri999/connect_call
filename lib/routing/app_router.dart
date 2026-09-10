@@ -1,17 +1,24 @@
 import 'package:go_router/go_router.dart';
+
 import '../screens/calls/incoming_call_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
-import '../screens/calls/call_history_screen.dart';
+import '../screens/calls/call_history_screen.dart' show CallHistoryScreen;
 import '../screens/contacts/contacts_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/splash/splash_screen.dart';
 import '../screens/calls/audio_call_screen.dart';
+
 import 'package:firebase_auth/firebase_auth.dart';
+
+import '../models/call_model.dart';
+import '../models/user_model.dart';
+import '../screens/calls/video_call_screen.dart';
+
 final GoRouter appRouter = GoRouter(
   initialLocation: '/splash',
-    redirect: (context, state) {
+  redirect: (context, state) {
     final user = FirebaseAuth.instance.currentUser;
 
     final isSplash = state.matchedLocation == '/splash';
@@ -51,17 +58,37 @@ final GoRouter appRouter = GoRouter(
       name: 'calls',
       builder: (context, state) => const CallHistoryScreen(),
     ),
-   
+
     GoRoute(
-           path: '/vedio-call',
-           name: 'vedio-call',
-                builder: (context, state) => const VideoCallScreen(),
-          ),
+      path: '/video-call',
+      name: 'video-call',
+      builder: (context, state) {
+        final data = state.extra as Map<String, dynamic>;
+
+        return VideoCallScreen(
+          callId: data['callId'] as String,
+          receiver: data['receiver'] as UserModel,
+        );
+      },
+    ),
     GoRoute(
-        path: '/incoming-call',
-        name: 'incoming-call',
-        builder: (context, state) => const IncomingCallScreen(),
-          ),
+      path: '/audio-call',
+      name: 'audio-call',
+      builder: (context, state) => const AudioCallScreen(),
+    ),
+    GoRoute(
+      path: '/incoming-call',
+      name: 'incoming-call',
+      builder: (context, state) {
+        final data = state.extra as Map<String, dynamic>;
+
+        return IncomingCallScreen(
+          callId: data['callId'] as String,
+          caller: data['caller'] as UserModel,
+          callType: data['callType'] as CallType,
+        );
+      },
+    ),
     GoRoute(
       path: '/register',
       name: 'register',

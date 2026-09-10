@@ -6,9 +6,31 @@ import '../../core/theme/app_design_system.dart';
 import '../../widgets/app_bottom_nav.dart';
 import '../../widgets/search_field.dart';
 import '../../widgets/user_avatar.dart';
-
-class HomeScreen extends StatelessWidget {
+import '../calls/incoming_call_listners.dart';
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      IncomingCallListener.instance.start(context);
+    });
+  }
+
+  @override
+  void dispose() {
+    IncomingCallListener.instance.stop();
+    super.dispose();
+  }
+
 
   @override
   Widget build(BuildContext context) {

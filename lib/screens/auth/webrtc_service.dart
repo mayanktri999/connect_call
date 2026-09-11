@@ -20,7 +20,7 @@ class WebRTCService {
   MediaStream? _remoteStream;
 
   void Function(MediaStream stream)? _remoteStreamHandler;
-  void Function(RTCPeerConnectionState state)? _connectionStateHandl
+  void Function(RTCPeerConnectionState state)? _connectionStateHandler;
   StreamSubscription<CallModel?>? _callSubscription;
   StreamSubscription? _remoteCandidateSubscription;
 
@@ -364,9 +364,13 @@ class WebRTCService {
     };
 
     try {
-      _localStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
+      _localStream = await navigator.mediaDevices.getUserMedia(
+        mediaConstraints,
+      );
     } catch (e) {
-      debugPrint('⚠️ getUserMedia with advanced constraints failed, trying basic: $e');
+      debugPrint(
+        '⚠️ getUserMedia with advanced constraints failed, trying basic: $e',
+      );
       _localStream = await navigator.mediaDevices.getUserMedia({
         'audio': true,
         'video': isVideo ? {'facingMode': 'user'} : false,
@@ -683,12 +687,14 @@ class WebRTCService {
     _isSpeakerOn = enable;
     try {
       await Helper.setSpeakerphoneOn(enable);
-      for (final track in _remoteStream?.getAudioTracks() ?? <MediaStreamTrack>[]) {
+      for (final track
+          in _remoteStream?.getAudioTracks() ?? <MediaStreamTrack>[]) {
         try {
           track.enableSpeakerphone(enable);
         } catch (_) {}
       }
-      for (final track in _localStream?.getAudioTracks() ?? <MediaStreamTrack>[]) {
+      for (final track
+          in _localStream?.getAudioTracks() ?? <MediaStreamTrack>[]) {
         try {
           track.enableSpeakerphone(enable);
         } catch (_) {}

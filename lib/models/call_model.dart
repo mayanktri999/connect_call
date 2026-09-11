@@ -23,6 +23,10 @@ class CallModel {
   final DateTime? answeredAt;
   final DateTime? endedAt;
 
+  // WebRTC signaling data
+  final Map<String, dynamic>? offer;
+  final Map<String, dynamic>? answer;
+
   const CallModel({
     required this.callId,
     required this.callerId,
@@ -32,6 +36,8 @@ class CallModel {
     required this.createdAt,
     this.answeredAt,
     this.endedAt,
+    this.offer,
+    this.answer,
   });
 
   factory CallModel.fromMap(
@@ -57,6 +63,20 @@ class CallModel {
       endedAt: _nullableDate(
         map['endedAt'],
       ),
+
+      // WebRTC offer
+      offer: map['offer'] != null
+          ? Map<String, dynamic>.from(
+              map['offer'],
+            )
+          : null,
+
+      // WebRTC answer
+      answer: map['answer'] != null
+          ? Map<String, dynamic>.from(
+              map['answer'],
+            )
+          : null,
     );
   }
 
@@ -68,17 +88,29 @@ class CallModel {
           ? 'video'
           : 'audio',
       'status': _statusToString(status),
-      'createdAt': Timestamp.fromDate(createdAt),
+      'createdAt': Timestamp.fromDate(
+        createdAt,
+      ),
       'answeredAt': answeredAt != null
-          ? Timestamp.fromDate(answeredAt!)
+          ? Timestamp.fromDate(
+              answeredAt!,
+            )
           : null,
       'endedAt': endedAt != null
-          ? Timestamp.fromDate(endedAt!)
+          ? Timestamp.fromDate(
+              endedAt!,
+            )
           : null,
+
+      // WebRTC signaling
+      'offer': offer,
+      'answer': answer,
     };
   }
 
-  static CallStatus _statusFromString(String value) {
+  static CallStatus _statusFromString(
+    String value,
+  ) {
     switch (value) {
       case 'accepted':
         return CallStatus.accepted;
@@ -97,7 +129,9 @@ class CallModel {
     }
   }
 
-  static String _statusToString(CallStatus status) {
+  static String _statusToString(
+    CallStatus status,
+  ) {
     switch (status) {
       case CallStatus.ringing:
         return 'ringing';
@@ -116,7 +150,9 @@ class CallModel {
     }
   }
 
-  static DateTime _dateFromTimestamp(dynamic value) {
+  static DateTime _dateFromTimestamp(
+    dynamic value,
+  ) {
     if (value is Timestamp) {
       return value.toDate();
     }
@@ -124,7 +160,9 @@ class CallModel {
     return DateTime.now();
   }
 
-  static DateTime? _nullableDate(dynamic value) {
+  static DateTime? _nullableDate(
+    dynamic value,
+  ) {
     if (value is Timestamp) {
       return value.toDate();
     }

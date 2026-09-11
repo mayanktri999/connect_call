@@ -9,13 +9,9 @@ import '../calls/call_services.dart';
 
 class VideoCallScreen extends StatefulWidget {
   final String callId;
-  final UserModel receiver;
+  final UserModel? receiver;
 
-  const VideoCallScreen({
-    super.key,
-    required this.callId,
-    required this.receiver,
-  });
+  const VideoCallScreen({super.key, required this.callId, this.receiver});
 
   @override
   State<VideoCallScreen> createState() => _VideoCallScreenState();
@@ -39,16 +35,13 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
   }
 
   void _startTimer() {
-    _timer = Timer.periodic(
-      const Duration(seconds: 1),
-      (_) {
-        if (!mounted) return;
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
 
-        setState(() {
-          _seconds++;
-        });
-      },
-    );
+      setState(() {
+        _seconds++;
+      });
+    });
   }
 
   String get _formattedTime {
@@ -69,9 +62,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     _timer?.cancel();
 
     try {
-      await CallService.instance.endCall(
-        widget.callId,
-      );
+      await CallService.instance.endCall(widget.callId);
     } catch (e) {
       debugPrint('Failed to end call: $e');
     }
@@ -83,9 +74,9 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final name = widget.receiver.name.isEmpty
+    final name = widget.receiver?.name.isEmpty != false
         ? 'Unknown User'
-        : widget.receiver.name;
+        : widget.receiver!.name;
 
     final initials = _getInitials(name);
 
@@ -100,30 +91,20 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
 
             Positioned.fill(
               child: _isCameraOff
-                  ? _buildCameraOffView(
-                      name,
-                      initials,
-                    )
-                  : _buildVideoPlaceholder(
-                      name,
-                      initials,
-                    ),
+                  ? _buildCameraOffView(name, initials)
+                  : _buildVideoPlaceholder(name, initials),
             ),
 
             // ------------------------------------------------
             // TOP BAR
             // ------------------------------------------------
-
             Positioned(
               top: 16,
               left: 16,
               right: 16,
               child: Row(
                 children: [
-                  _RoundButton(
-                    icon: Icons.arrow_back_rounded,
-                    onTap: _endCall,
-                  ),
+                  _RoundButton(icon: Icons.arrow_back_rounded, onTap: _endCall),
 
                   const Spacer(),
 
@@ -165,7 +146,6 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
             // ------------------------------------------------
             // REMOTE USER INFO
             // ------------------------------------------------
-
             Positioned(
               left: 20,
               bottom: 145,
@@ -195,7 +175,6 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
             // ------------------------------------------------
             // SELF VIDEO PREVIEW
             // ------------------------------------------------
-
             Positioned(
               top: 76,
               right: 16,
@@ -211,9 +190,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
                   decoration: BoxDecoration(
                     color: const Color(0xFF1B1B1B),
                     borderRadius: BorderRadius.circular(18),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.25),
-                    ),
+                    border: Border.all(color: Colors.white.withOpacity(0.25)),
                   ),
                   child: _isCameraOff
                       ? const Center(
@@ -224,8 +201,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
                           ),
                         )
                       : Column(
-                          mainAxisAlignment:
-                              MainAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             const Icon(
                               Icons.person_rounded,
@@ -234,9 +210,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
                             ),
                             const SizedBox(height: 5),
                             Text(
-                              _isFrontCamera
-                                  ? 'You'
-                                  : 'Camera',
+                              _isFrontCamera ? 'You' : 'Camera',
                               style: const TextStyle(
                                 color: Colors.white70,
                                 fontSize: 11,
@@ -251,7 +225,6 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
             // ------------------------------------------------
             // BOTTOM CONTROLS
             // ------------------------------------------------
-
             Positioned(
               left: 20,
               right: 20,
@@ -264,13 +237,10 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
                 decoration: BoxDecoration(
                   color: Colors.black.withOpacity(0.55),
                   borderRadius: BorderRadius.circular(28),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.12),
-                  ),
+                  border: Border.all(color: Colors.white.withOpacity(0.12)),
                 ),
                 child: Row(
-                  mainAxisAlignment:
-                      MainAxisAlignment.spaceEvenly,
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     _CallControlButton(
                       icon: _isMuted
@@ -289,9 +259,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
                       icon: _isCameraOff
                           ? Icons.videocam_off_rounded
                           : Icons.videocam_rounded,
-                      label: _isCameraOff
-                          ? 'Camera on'
-                          : 'Camera',
+                      label: _isCameraOff ? 'Camera on' : 'Camera',
                       active: !_isCameraOff,
                       onTap: () {
                         setState(() {
@@ -345,10 +313,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
   // CAMERA OFF VIEW
   // ----------------------------------------------------------
 
-  Widget _buildCameraOffView(
-    String name,
-    String initials,
-  ) {
+  Widget _buildCameraOffView(String name, String initials) {
     return Container(
       color: const Color(0xFF111111),
       child: Center(
@@ -379,10 +344,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
             const SizedBox(height: 6),
             const Text(
               'Camera is off',
-              style: TextStyle(
-                color: Colors.white54,
-                fontSize: 13,
-              ),
+              style: TextStyle(color: Colors.white54, fontSize: 13),
             ),
           ],
         ),
@@ -394,10 +356,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
   // VIDEO PLACEHOLDER
   // ----------------------------------------------------------
 
-  Widget _buildVideoPlaceholder(
-    String name,
-    String initials,
-  ) {
+  Widget _buildVideoPlaceholder(String name, String initials) {
     return Container(
       color: const Color(0xFF202020),
       child: Center(
@@ -428,10 +387,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
             const SizedBox(height: 6),
             const Text(
               'Connecting...',
-              style: TextStyle(
-                color: Colors.white54,
-                fontSize: 13,
-              ),
+              style: TextStyle(color: Colors.white54, fontSize: 13),
             ),
           ],
         ),
@@ -452,17 +408,11 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
 
     if (parts.length == 1) {
       return parts.first
-          .substring(
-            0,
-            parts.first.length >= 2
-                ? 2
-                : 1,
-          )
+          .substring(0, parts.first.length >= 2 ? 2 : 1)
           .toUpperCase();
     }
 
-    return '${parts.first[0]}${parts.last[0]}'
-        .toUpperCase();
+    return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
   }
 }
 
@@ -474,10 +424,7 @@ class _RoundButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
 
-  const _RoundButton({
-    required this.icon,
-    required this.onTap,
-  });
+  const _RoundButton({required this.icon, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -489,15 +436,9 @@ class _RoundButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.black.withOpacity(0.45),
           shape: BoxShape.circle,
-          border: Border.all(
-            color: Colors.white.withOpacity(0.12),
-          ),
+          border: Border.all(color: Colors.white.withOpacity(0.12)),
         ),
-        child: Icon(
-          icon,
-          color: Colors.white,
-          size: 21,
-        ),
+        child: Icon(icon, color: Colors.white, size: 21),
       ),
     );
   }
@@ -527,8 +468,8 @@ class _CallControlButton extends StatelessWidget {
     final background = destructive
         ? const Color(0xFFE53935)
         : active
-            ? Colors.white.withOpacity(0.15)
-            : Colors.white.withOpacity(0.08);
+        ? Colors.white.withOpacity(0.15)
+        : Colors.white.withOpacity(0.08);
 
     return GestureDetector(
       onTap: onTap,
@@ -542,11 +483,7 @@ class _CallControlButton extends StatelessWidget {
               color: background,
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              icon,
-              color: Colors.white,
-              size: 21,
-            ),
+            child: Icon(icon, color: Colors.white, size: 21),
           ),
           const SizedBox(height: 5),
           Text(

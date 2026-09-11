@@ -1,198 +1,272 @@
 import 'dart:async';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../models/call_model.dart';
+import '../calls/call_services.dart';
+import '../auth/webrtc_service.dart';
+import '../auth/user_service.dart';
+
 class AudioCallScreen extends StatefulWidget {
-  const AudioCallScreen({super.key});
+  final String callId;
+
+  const AudioCallScreen({
+    super.key,
+    required this.callId,
+  });
 
   @override
-  State<AudioCallScreen> createState() => _AudioCallScreenState();
+  State<AudioCallScreen> createState() =>
+      _AudioCallScreenState();
 }
 
 class _AudioCallScreenState extends State<AudioCallScreen> {
-  bool isMuted = false;
-  bool isSpeakerOn = false;
+  StreamSubscription<CallModel?>? _callSubscription;
 
-  Timer? _timer;
-  int _seconds = 0;
+  String _callerName = 'Calling...';
+
+  bool _isMuted = false;
+  bool _isConnected = false;
+  bool _ending = false;
 
   @override
   void initState() {
     super.initState();
 
-    _timer = Timer.periodic(
-      const Duration(seconds: 1),
-      (_) {
-        if (mounted) {
-          setState(() {
-            _seconds++;
-          });
-        }
-      },
+    _loadCall();
+    _listenToCall();
+  }
+
+  Future<void> _loadCall() async {
+    try {
+      final call = await CallService.instance.getCall(
+        widget.callId,
+      );
+
+      if (call == null) return;
+
+      final currentUser =
+          FirebaseAuth.instance.currentUser;
+
+      if (currentUser == null) return;
+
+      final otherUserId =
+          call.callerId == currentUser.uid
+              ? call.receiverId
+              : call.callerId;
+
+      final user =
+          await UserService.instance.getUser(
+        otherUserId,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _callerName =
+            user?.name.isNotEmpty == true
+                ? user!.name
+                : user?.email ?? 'Unknown';
+      });
+    } catch (_) {}
+  }
+
+  void _listenToCall() {
+    _callSubscription =
+        CallService.instance
+            .listenToCall(widget.callId)
+            .listen((call) {
+      if (!mounted || call == null) return;
+
+      if (call.status == CallStatus.accepted) {
+        setState(() {
+          _isConnected = true;
+        });
+      }
+
+      if (call.status == CallStatus.rejected ||
+          call.status == CallStatus.missed ||
+          call.status == CallStatus.ended) {
+        _finishCall();
+      }
+    });
+  }
+
+  Future<void> _toggleMute() async {
+    final newValue = !_isMuted;
+
+    await WebRTCService.instance.setMuted(
+      newValue,
     );
+
+    if (!mounted) return;
+
+    setState(() {
+      _isMuted = newValue;
+    });
+  }
+
+  Future<void> _endCall() async {
+    if (_ending) return;
+
+    setState(() {
+      _ending = true;
+    });
+
+    try {
+      await CallService.instance.endCall(
+        widget.callId,
+      );
+    } catch (_) {}
+
+    await WebRTCService.instance.dispose();
+
+    if (!mounted) return;
+
+    context.go('/home');
+  }
+
+  Future<void> _finishCall() async {
+    if (_ending) return;
+
+    _ending = true;
+
+    await WebRTCService.instance.dispose();
+
+    if (!mounted) return;
+
+    context.go('/home');
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
+    _callSubscription?.cancel();
     super.dispose();
-  }
-
-  String get _callDuration {
-    final minutes = (_seconds ~/ 60).toString().padLeft(2, '0');
-    final seconds = (_seconds % 60).toString().padLeft(2, '0');
-
-    return '$minutes:$seconds';
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
-        child: Column(
-          children: [
-            const Spacer(flex: 2),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(
+            horizontal: 28,
+            vertical: 32,
+          ),
+          child: Column(
+            mainAxisAlignment:
+                MainAxisAlignment.spaceBetween,
+            children: [
+              const SizedBox(height: 20),
 
-            const Text(
-              'Audio Call',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF8CA1B7),
-              ),
-            ),
-
-            const SizedBox(height: 28),
-
-            Container(
-              width: 118,
-              height: 118,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: const Color(0xFFE4F8FC),
-                border: Border.all(
-                  color: const Color(0xFF08B1D0),
-                  width: 3,
-                ),
-              ),
-              child: const Center(
-                child: Text(
-                  'SJ',
-                  style: TextStyle(
-                    fontSize: 34,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF08B1D0),
+              Column(
+                children: [
+                  const CircleAvatar(
+                    radius: 64,
+                    child: Icon(
+                      Icons.person,
+                      size: 64,
+                    ),
                   ),
-                ),
+
+                  const SizedBox(height: 24),
+
+                  Text(
+                    _callerName,
+                    textAlign: TextAlign.center,
+                    style: theme
+                        .textTheme
+                        .headlineSmall
+                        ?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  Text(
+                    _isConnected
+                        ? 'Connected'
+                        : 'Calling...',
+                    style:
+                        theme.textTheme.bodyLarge,
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  if (!_isConnected)
+                    const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child:
+                          CircularProgressIndicator(
+                        strokeWidth: 2,
+                      ),
+                    ),
+                ],
               ),
-            ),
 
-            const SizedBox(height: 20),
+              Column(
+                children: [
+                  Row(
+                    mainAxisAlignment:
+                        MainAxisAlignment.center,
+                    children: [
+                      _CallControl(
+                        icon: _isMuted
+                            ? Icons.mic_off
+                            : Icons.mic,
+                        label: _isMuted
+                            ? 'Unmute'
+                            : 'Mute',
+                        active: _isMuted,
+                        onTap: _toggleMute,
+                      ),
+                    ],
+                  ),
 
-            const Text(
-              'Sarah Johnson',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF172033),
+                  const SizedBox(height: 32),
+
+                  SizedBox(
+                    width: 68,
+                    height: 68,
+                    child: FloatingActionButton(
+                      heroTag: 'end-call',
+                      backgroundColor: Colors.red,
+                      onPressed:
+                          _ending ? null : _endCall,
+                      child: const Icon(
+                        Icons.call_end,
+                        size: 30,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  const Text('End call'),
+                ],
               ),
-            ),
-
-            const SizedBox(height: 8),
-
-            Text(
-              _callDuration,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF8CA1B7),
-              ),
-            ),
-
-            const Spacer(flex: 3),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _ControlButton(
-                  icon: isMuted
-                      ? Icons.mic_off_rounded
-                      : Icons.mic_rounded,
-                  label: isMuted ? 'Unmute' : 'Mute',
-                  active: isMuted,
-                  onTap: () {
-                    setState(() {
-                      isMuted = !isMuted;
-                    });
-                  },
-                ),
-
-                const SizedBox(width: 28),
-
-                _ControlButton(
-                  icon: isSpeakerOn
-                      ? Icons.volume_up_rounded
-                      : Icons.volume_down_rounded,
-                  label: 'Speaker',
-                  active: isSpeakerOn,
-                  onTap: () {
-                    setState(() {
-                      isSpeakerOn = !isSpeakerOn;
-                    });
-                  },
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 30),
-
-            GestureDetector(
-              onTap: () {
-                context.pop();
-              },
-              child: Container(
-                width: 64,
-                height: 64,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFFF4E55),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.call_end_rounded,
-                  color: Colors.white,
-                  size: 29,
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            const Text(
-              'End call',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF52657A),
-              ),
-            ),
-
-            const SizedBox(height: 40),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _ControlButton extends StatelessWidget {
+class _CallControl extends StatelessWidget {
   final IconData icon;
   final String label;
   final bool active;
   final VoidCallback onTap;
 
-  const _ControlButton({
+  const _CallControl({
     required this.icon,
     required this.label,
     required this.active,
@@ -203,36 +277,18 @@ class _ControlButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        GestureDetector(
-          onTap: onTap,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              color: active
-                  ? const Color(0xFF08B1D0)
-                  : const Color(0xFFEAF1F6),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              icon,
-              size: 22,
-              color: active
-                  ? Colors.white
-                  : const Color(0xFF60758B),
-            ),
+        SizedBox(
+          width: 56,
+          height: 56,
+          child: FloatingActionButton(
+            heroTag: label,
+            elevation: 0,
+            onPressed: onTap,
+            child: Icon(icon),
           ),
         ),
         const SizedBox(height: 8),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF52657A),
-          ),
-        ),
+        Text(label),
       ],
     );
   }

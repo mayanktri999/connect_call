@@ -12,8 +12,7 @@ import '../auth/user_service.dart';
 class IncomingCallListener {
   IncomingCallListener._();
 
-  static final IncomingCallListener instance =
-      IncomingCallListener._();
+  static final IncomingCallListener instance = IncomingCallListener._();
 
   StreamSubscription<List<CallModel>>? _subscription;
 
@@ -28,9 +27,9 @@ class IncomingCallListener {
 
     _subscription?.cancel();
 
-    _subscription = CallService.instance
-        .incomingCalls(user.uid)
-        .listen((calls) async {
+    _subscription = CallService.instance.incomingCalls(user.uid).listen((
+      calls,
+    ) async {
       if (calls.isEmpty || _isShowingCall) {
         return;
       }
@@ -39,8 +38,7 @@ class IncomingCallListener {
 
       _isShowingCall = true;
 
-      final caller =
-          await UserService.instance.getUser(call.callerId);
+      final caller = await UserService.instance.getUser(call.callerId);
 
       if (caller == null) {
         _isShowingCall = false;
@@ -55,9 +53,8 @@ class IncomingCallListener {
       await context.push(
         '/incoming-call',
         extra: {
-          'callId': call.callId,
-          'caller': caller,
-          'callType': call.type,
+          'call': call,
+          'callerName': caller.name.isNotEmpty ? caller.name : caller.email,
         },
       );
 

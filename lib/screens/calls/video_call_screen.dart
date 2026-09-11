@@ -1,17 +1,25 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../models/user_model.dart';
 import '../calls/call_services.dart';
+import '../auth/webrtc_service.dart';
 
 class VideoCallScreen extends StatefulWidget {
   final String callId;
   final UserModel? receiver;
+  final bool isCaller;
 
-  const VideoCallScreen({super.key, required this.callId, this.receiver});
+  const VideoCallScreen({
+    super.key,
+    required this.callId,
+    this.receiver,
+    this.isCaller = true,
+  });
 
   @override
   State<VideoCallScreen> createState() => _VideoCallScreenState();
@@ -26,12 +34,52 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
   bool _isCameraOff = false;
   bool _isSpeakerOn = true;
   bool _isFrontCamera = true;
+  bool _ending = false;
+  final RTCVideoRenderer _localRenderer = RTCVideoRenderer();
+  final RTCVideoRenderer _remoteRenderer = RTCVideoRenderer();
+  bool _renderersReady = false;
 
   @override
   void initState() {
     super.initState();
 
     _startTimer();
+    _initializeWebRtc();
+  }
+
+  Future<void> _initializeWebRtc() async {
+    try {
+      await _localRenderer.initialize();
+      await _remoteRenderer.initialize();
+
+      if (widget.isCaller) {
+        await WebRTCService.instance.startAsCaller(
+          callId: widget.callId,
+          isVideo: true,
+        );
+      }
+
+      // Automatically enable speakerphone for video calls
+      await WebRTCService.instance.enableSpeakerphone(_isSpeakerOn);
+
+      if (!widget.isCaller) {
+        _localRenderer.srcObject = WebRTCService.instance.localStream;
+      }
+
+      _localRenderer.srcObject = WebRTCService.instance.localStream;
+      WebRTCService.instance.setRemoteStreamHandler((stream) {
+        _remoteRenderer.srcObject = stream;
+        if (mounted) setState(() {});
+      });
+
+      if (mounted) {
+        setState(() {
+          _renderersReady = true;
+        });
+      }
+    } catch (error) {
+      debugPrint('Failed to start video call: $error');
+    }
   }
 
   void _startTimer() {
@@ -55,10 +103,51 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
   @override
   void dispose() {
     _timer?.cancel();
+    WebRTCService.instance.dispose();
+    _localRenderer.dispose();
+    _remoteRenderer.dispose();
     super.dispose();
   }
 
+  Future<void> _toggleMute() async {
+    final newValue = !_isMuted;
+    await WebRTCService.instance.setMuted(newValue);
+    if (!mounted) return;
+    setState(() {
+      _isMuted = newValue;
+    });
+  }
+
+  Future<void> _toggleCamera() async {
+    final newValue = !_isCameraOff;
+    await WebRTCService.instance.setCameraEnabled(!newValue);
+    if (!mounted) return;
+    setState(() {
+      _isCameraOff = newValue;
+    });
+  }
+
+  Future<void> _toggleSpeaker() async {
+    final newValue = !_isSpeakerOn;
+    await WebRTCService.instance.enableSpeakerphone(newValue);
+    if (!mounted) return;
+    setState(() {
+      _isSpeakerOn = newValue;
+    });
+  }
+
+  Future<void> _switchCamera() async {
+    await WebRTCService.instance.switchCamera();
+    if (!mounted) return;
+    setState(() {
+      _isFrontCamera = !_isFrontCamera;
+    });
+  }
+
   Future<void> _endCall() async {
+    if (_ending) return;
+
+    _ending = true;
     _timer?.cancel();
 
     try {
@@ -67,9 +156,11 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
       debugPrint('Failed to end call: $e');
     }
 
+    await WebRTCService.instance.dispose();
+
     if (!mounted) return;
 
-    context.pop();
+    context.go('/home');
   }
 
   @override
@@ -114,7 +205,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
                       vertical: 9,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.45),
+                      color: Colors.black.withValues(alpha: 0.45),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
@@ -179,18 +270,14 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
               top: 76,
               right: 16,
               child: GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _isFrontCamera = !_isFrontCamera;
-                  });
-                },
+                onTap: _switchCamera,
                 child: Container(
                   width: 105,
                   height: 145,
                   decoration: BoxDecoration(
                     color: const Color(0xFF1B1B1B),
                     borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: Colors.white.withOpacity(0.25)),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
                   ),
                   child: _isCameraOff
                       ? const Center(
@@ -199,6 +286,11 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
                             color: Colors.white,
                             size: 26,
                           ),
+                        )
+                      : _renderersReady && _localRenderer.srcObject != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(17),
+                          child: RTCVideoView(_localRenderer, mirror: _isFrontCamera),
                         )
                       : Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -235,9 +327,9 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
                   vertical: 14,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.55),
+                  color: Colors.black.withValues(alpha: 0.55),
                   borderRadius: BorderRadius.circular(28),
-                  border: Border.all(color: Colors.white.withOpacity(0.12)),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -248,11 +340,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
                           : Icons.mic_rounded,
                       label: _isMuted ? 'Unmute' : 'Mute',
                       active: !_isMuted,
-                      onTap: () {
-                        setState(() {
-                          _isMuted = !_isMuted;
-                        });
-                      },
+                      onTap: _toggleMute,
                     ),
 
                     _CallControlButton(
@@ -261,11 +349,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
                           : Icons.videocam_rounded,
                       label: _isCameraOff ? 'Camera on' : 'Camera',
                       active: !_isCameraOff,
-                      onTap: () {
-                        setState(() {
-                          _isCameraOff = !_isCameraOff;
-                        });
-                      },
+                      onTap: _toggleCamera,
                     ),
 
                     _CallControlButton(
@@ -274,22 +358,14 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
                           : Icons.volume_off_rounded,
                       label: 'Speaker',
                       active: _isSpeakerOn,
-                      onTap: () {
-                        setState(() {
-                          _isSpeakerOn = !_isSpeakerOn;
-                        });
-                      },
+                      onTap: _toggleSpeaker,
                     ),
 
                     _CallControlButton(
                       icon: Icons.cameraswitch_rounded,
                       label: 'Flip',
                       active: true,
-                      onTap: () {
-                        setState(() {
-                          _isFrontCamera = !_isFrontCamera;
-                        });
-                      },
+                      onTap: _switchCamera,
                     ),
 
                     _CallControlButton(
@@ -357,6 +433,10 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
   // ----------------------------------------------------------
 
   Widget _buildVideoPlaceholder(String name, String initials) {
+    if (_renderersReady && _remoteRenderer.srcObject != null) {
+      return RTCVideoView(_remoteRenderer);
+    }
+
     return Container(
       color: const Color(0xFF202020),
       child: Center(
@@ -434,9 +514,9 @@ class _RoundButton extends StatelessWidget {
         width: 42,
         height: 42,
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.45),
+          color: Colors.black.withValues(alpha: 0.45),
           shape: BoxShape.circle,
-          border: Border.all(color: Colors.white.withOpacity(0.12)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
         ),
         child: Icon(icon, color: Colors.white, size: 21),
       ),
@@ -468,8 +548,8 @@ class _CallControlButton extends StatelessWidget {
     final background = destructive
         ? const Color(0xFFE53935)
         : active
-        ? Colors.white.withOpacity(0.15)
-        : Colors.white.withOpacity(0.08);
+        ? Colors.white.withValues(alpha: 0.15)
+        : Colors.white.withValues(alpha: 0.08);
 
     return GestureDetector(
       onTap: onTap,

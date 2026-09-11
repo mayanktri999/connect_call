@@ -26,18 +26,51 @@ class UserModel {
       name: map['name'] ?? '',
       email: map['email'] ?? '',
       profileImage: map['profileImage'],
-      isOnline: map['isOnline'] ?? false,
-      createdAt: (map['createdAt'] as Timestamp?)?.toDate(),
+      isOnline: map['isOnline'] == true,
+      createdAt: _parseDate(map['createdAt']),
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
+      'uid': uid,
       'name': name,
       'email': email,
       'profileImage': profileImage,
       'isOnline': isOnline,
-      'createdAt': createdAt,
+      'createdAt': createdAt != null
+          ? Timestamp.fromDate(createdAt!)
+          : null,
     };
+  }
+
+  static DateTime? _parseDate(dynamic value) {
+    if (value is Timestamp) {
+      return value.toDate();
+    }
+
+    if (value is DateTime) {
+      return value;
+    }
+
+    return null;
+  }
+
+  UserModel copyWith({
+    String? uid,
+    String? name,
+    String? email,
+    String? profileImage,
+    bool? isOnline,
+    DateTime? createdAt,
+  }) {
+    return UserModel(
+      uid: uid ?? this.uid,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      profileImage: profileImage ?? this.profileImage,
+      isOnline: isOnline ?? this.isOnline,
+      createdAt: createdAt ?? this.createdAt,
+    );
   }
 }

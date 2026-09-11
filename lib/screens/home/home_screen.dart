@@ -1,19 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_design_system.dart';
+import '../../models/user_model.dart';
 import '../../widgets/app_bottom_nav.dart';
 import '../../widgets/search_field.dart';
 import '../../widgets/user_avatar.dart';
 import '../calls/incoming_call_listners.dart';
-class HomeScreen extends StatefulWidget {
+import '../../models/call_model.dart';
+import '../../providers/call_history_provider.dart';
+import '../../providers/contacts_provider.dart';
+import '../../providers/user_provider.dart';
+
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
-   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  @override
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
@@ -31,9 +38,12 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-
   @override
   Widget build(BuildContext context) {
+    final user = ref.watch(userProvider).valueOrNull;
+    final contacts = ref.watch(contactsProvider).valueOrNull ?? const [];
+    final calls = ref.watch(callHistoryProvider).valueOrNull ?? const [];
+
     return Scaffold(
       body: Container(
         decoration: AppDesignSystem.createScreenBackground(),
@@ -42,21 +52,24 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Expanded(
                 child: SingleChildScrollView(
-                  padding: AppDesignSystem.pagePadding.copyWith(top: 18, bottom: 20),
+                  padding: AppDesignSystem.pagePadding.copyWith(
+                    top: 18,
+                    bottom: 20,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildHeader(),
+                      _buildHeader(user?.name ?? user?.email ?? 'User'),
                       const SizedBox(height: 18),
                       const AppSearchField(),
                       const SizedBox(height: 24),
                       _buildCallActions(context),
                       const SizedBox(height: 24),
-                      _buildOnlineSection(),
+                      _buildOnlineSection(contacts),
                       const SizedBox(height: 24),
                       _buildRecentHeader(),
                       const SizedBox(height: 12),
-                      _buildRecentCalls(),
+                      _buildRecentCalls(calls, contacts, user?.uid),
                     ],
                   ),
                 ),
@@ -88,11 +101,19 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(String displayName) {
+    final initials = displayName
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((part) => part.isNotEmpty)
+        .take(2)
+        .map((part) => part[0].toUpperCase())
+        .join();
+
     return Row(
       children: [
-        const UserAvatar(
-          initials: 'MS',
+        UserAvatar(
+          initials: initials.isEmpty ? 'U' : initials,
           color: AppColors.primary,
           online: true,
           size: 38,
@@ -101,8 +122,8 @@ class _HomeScreenState extends State<HomeScreen> {
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              Text(
+            children: [
+              const Text(
                 'Good morning,',
                 style: TextStyle(
                   fontSize: 11,
@@ -112,7 +133,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               SizedBox(height: 2),
               Text(
-                'Mayank 👋',
+                displayName,
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w800,
@@ -183,14 +204,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildOnlineSection() {
-    final users = [
-      ('SJ', 'Sarah', const Color(0xFF22A8E0)),
-      ('AW', 'Alex', const Color(0xFF20B989)),
-      ('ED', 'Emma', const Color(0xFFF5A51C)),
-      ('SW', 'Sarah', const Color(0xFF20B4CD)),
-      ('PP', 'Priya', const Color(0xFFE84C91)),
-    ];
+  Widget _buildOnlineSection(List<UserModel> contacts) {
+    final users = contacts.where((user) => user.isOnline).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -212,8 +227,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: const Color(0xFFE8FBF4),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Text(
-                '5 active',
+              child: Text(
+                '${users.length} active',
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
@@ -226,18 +241,25 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox(height: 14),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: users.map((user) {
+          children: users.take(5).map((user) {
+            final initials = user.name
+                .trim()
+                .split(RegExp(r'\s+'))
+                .where((part) => part.isNotEmpty)
+                .take(2)
+                .map((part) => part[0].toUpperCase())
+                .join();
             return Column(
               children: [
                 UserAvatar(
-                  initials: user.$1,
-                  color: user.$3,
-                  online: true,
+                  initials: initials.isEmpty ? 'U' : initials,
+                  color: AppColors.primary,
+                  online: user.isOnline,
                   size: 38,
                 ),
                 const SizedBox(height: 5),
                 Text(
-                  user.$2,
+                  user.name,
                   style: const TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w500,
@@ -279,41 +301,47 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildRecentCalls() {
+  Widget _buildRecentCalls(
+    List<CallModel> calls,
+    List<UserModel> contacts,
+    String? currentUserId,
+  ) {
+    final usersById = {for (final user in contacts) user.uid: user};
+
     return Column(
-      children: [
-        _RecentCallTile(
-          initials: 'SJ',
-          name: 'Sarah Johnson',
-          color: const Color(0xFF22A8E0),
-          duration: '02:35',
-          time: 'Today',
-          video: true,
-          outgoing: true,
-        ),
-        const SizedBox(height: 10),
-        _RecentCallTile(
-          initials: 'JS',
-          name: 'John Smith',
-          color: const Color(0xFF8A5CF5),
-          duration: 'Missed',
-          time: 'Yesterday',
-          video: false,
-          outgoing: false,
-          missed: true,
-        ),
-        const SizedBox(height: 10),
-        _RecentCallTile(
-          initials: 'AW',
-          name: 'Alex Wilson',
-          color: const Color(0xFF20B989),
-          duration: '08:12',
-          time: 'Yesterday',
-          video: false,
-          outgoing: true,
-        ),
-      ],
+      children: calls.take(3).map((call) {
+        final otherId = call.callerId == currentUserId
+            ? call.receiverId
+            : call.callerId;
+        final name = usersById[otherId]?.name ?? otherId;
+        final initials = name
+            .trim()
+            .split(RegExp(r'\s+'))
+            .where((part) => part.isNotEmpty)
+            .take(2)
+            .map((part) => part[0].toUpperCase())
+            .join();
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: _RecentCallTile(
+            initials: initials.isEmpty ? 'U' : initials,
+            name: name,
+            color: AppColors.primary,
+            duration: call.status == CallStatus.missed ? 'Missed' : 'Call',
+            time: _formatDate(call.createdAt),
+            video: call.type == CallType.video,
+            outgoing: call.callerId == currentUserId,
+            missed: call.status == CallStatus.missed,
+          ),
+        );
+      }).toList(),
     );
+  }
+
+  String _formatDate(DateTime date) {
+    final localDate = date.toLocal();
+    return '${localDate.day}/${localDate.month}/${localDate.year}';
   }
 }
 
@@ -349,7 +377,9 @@ class _CallActionCard extends StatelessWidget {
               width: 42,
               height: 42,
               decoration: BoxDecoration(
-                color: filled ? Colors.white.withValues(alpha: 0.18) : AppColors.primarySoft,
+                color: filled
+                    ? Colors.white.withValues(alpha: 0.18)
+                    : AppColors.primarySoft,
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Icon(
@@ -397,7 +427,9 @@ class _RecentCallTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final metaColor = missed ? const Color(0xFFFF4E55) : AppColors.secondaryText;
+    final metaColor = missed
+        ? const Color(0xFFFF4E55)
+        : AppColors.secondaryText;
 
     return Container(
       height: 72,
@@ -410,11 +442,7 @@ class _RecentCallTile extends StatelessWidget {
       ),
       child: Row(
         children: [
-          UserAvatar(
-            initials: initials,
-            color: color,
-            size: 38,
-          ),
+          UserAvatar(initials: initials, color: color, size: 38),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -433,9 +461,13 @@ class _RecentCallTile extends StatelessWidget {
                 Row(
                   children: [
                     Icon(
-                      outgoing ? Icons.north_east_rounded : Icons.south_west_rounded,
+                      outgoing
+                          ? Icons.north_east_rounded
+                          : Icons.south_west_rounded,
                       size: 12,
-                      color: missed ? const Color(0xFFFF4E55) : AppColors.primary,
+                      color: missed
+                          ? const Color(0xFFFF4E55)
+                          : AppColors.primary,
                     ),
                     const SizedBox(width: 3),
                     Icon(

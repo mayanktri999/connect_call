@@ -1,87 +1,78 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_design_system.dart';
+import '../../models/call_model.dart' as model;
+import '../../providers/auth_provider.dart';
+import '../../providers/call_history_provider.dart';
+import '../../providers/contacts_provider.dart';
 import '../../widgets/app_bottom_nav.dart';
 import '../../widgets/user_avatar.dart';
 
-class CallHistoryScreen extends StatefulWidget {
+class CallHistoryScreen extends ConsumerStatefulWidget {
   const CallHistoryScreen({super.key});
 
   @override
-  State<CallHistoryScreen> createState() => _CallHistoryScreenState();
+  ConsumerState<CallHistoryScreen> createState() => _CallHistoryScreenState();
 }
 
-class _CallHistoryScreenState extends State<CallHistoryScreen> {
+class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen> {
   int selectedFilter = 0;
 
   final filters = const ['All', 'Missed', 'Incoming', 'Outgoing'];
 
-  final calls = const [
-    _Call(
-      name: 'Sarah Johnson',
-      initials: 'SJ',
-      color: Color(0xFF22A8E0),
-      type: CallType.outgoing,
-      mode: CallMode.video,
-      duration: '02:35',
-      date: 'Today, 10:42 AM',
-    ),
-    _Call(
-      name: 'John Smith',
-      initials: 'JS',
-      color: Color(0xFF8A5CF5),
-      type: CallType.missed,
-      mode: CallMode.audio,
-      duration: 'Missed call',
-      date: 'Yesterday, 7:18 PM',
-    ),
-    _Call(
-      name: 'Alex Wilson',
-      initials: 'AW',
-      color: Color(0xFF20B989),
-      type: CallType.incoming,
-      mode: CallMode.audio,
-      duration: '08:12',
-      date: 'Yesterday, 4:05 PM',
-    ),
-    _Call(
-      name: 'Emma Davis',
-      initials: 'ED',
-      color: Color(0xFFF5A51C),
-      type: CallType.outgoing,
-      mode: CallMode.video,
-      duration: '05:44',
-      date: 'Sep 7, 2:32 PM',
-    ),
-    _Call(
-      name: 'Priya Patel',
-      initials: 'PP',
-      color: Color(0xFFE84C91),
-      type: CallType.incoming,
-      mode: CallMode.video,
-      duration: '11:20',
-      date: 'Sep 6, 8:14 PM',
-    ),
-  ];
-
-  List<_Call> get filteredCalls {
-    if (selectedFilter == 0) {
-      return calls;
-    }
-
-    final type = switch (selectedFilter) {
-      1 => CallType.missed,
-      2 => CallType.incoming,
-      _ => CallType.outgoing,
-    };
-
-    return calls.where((call) => call.type == type).toList();
-  }
-
   @override
   Widget build(BuildContext context) {
+    final currentUserId = ref.watch(authStateProvider).valueOrNull?.uid;
+    final contacts = ref.watch(contactsProvider).valueOrNull ?? const [];
+    final calls = ref.watch(callHistoryProvider).valueOrNull ?? const [];
+    final usersById = {for (final user in contacts) user.uid: user};
+    final realCalls = calls
+        .map((call) {
+          final otherId = call.callerId == currentUserId
+              ? call.receiverId
+              : call.callerId;
+          final name = usersById[otherId]?.name ?? otherId;
+          final initials = name
+              .trim()
+              .split(RegExp(r'\s+'))
+              .where((part) => part.isNotEmpty)
+              .take(2)
+              .map((part) => part[0].toUpperCase())
+              .join();
+          final type = call.status == model.CallStatus.missed
+              ? CallType.missed
+              : call.callerId == currentUserId
+              ? CallType.outgoing
+              : CallType.incoming;
+
+          return _Call(
+            name: name,
+            initials: initials.isEmpty ? 'U' : initials,
+            color: AppColors.primary,
+            type: type,
+            mode: call.type == model.CallType.video
+                ? CallMode.video
+                : CallMode.audio,
+            duration: call.status == model.CallStatus.missed
+                ? 'Missed call'
+                : 'Call',
+            date: _formatDate(call.createdAt),
+          );
+        })
+        .where((call) {
+          if (selectedFilter == 0) return true;
+          final type = switch (selectedFilter) {
+            1 => CallType.missed,
+            2 => CallType.incoming,
+            _ => CallType.outgoing,
+          };
+          return call.type == type;
+        })
+        .toList();
+
     return Scaffold(
       body: Container(
         decoration: AppDesignSystem.createScreenBackground(),
@@ -99,9 +90,9 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
                     const SizedBox(height: 18),
                     _buildFilters(),
                     const SizedBox(height: 22),
-                    _buildSectionLabel(),
+                    _buildSectionLabel(realCalls.length),
                     const SizedBox(height: 12),
-                    ...filteredCalls.map(
+                    ...realCalls.map(
                       (call) => Padding(
                         padding: const EdgeInsets.only(bottom: 10),
                         child: _CallHistoryTile(call: call),
@@ -216,7 +207,12 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
     );
   }
 
-  Widget _buildSectionLabel() {
+  String _formatDate(DateTime date) {
+    final localDate = date.toLocal();
+    return '${localDate.day}/${localDate.month}/${localDate.year}';
+  }
+
+  Widget _buildSectionLabel(int count) {
     return Row(
       children: [
         const Text(
@@ -230,7 +226,7 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
         ),
         const SizedBox(width: 7),
         Text(
-          '${filteredCalls.length}',
+          '$count',
           style: const TextStyle(
             fontSize: 10,
             fontWeight: FontWeight.w700,

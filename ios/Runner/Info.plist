@@ -8,6 +8,10 @@
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
 	<string>Connect Call</string>
+	<key>NSCameraUsageDescription</key>
+	<string>ConnectCall requires camera access for video calls.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>ConnectCall requires microphone access for voice and video calls.</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>

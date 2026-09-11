@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 
@@ -8,9 +10,10 @@ class PresenceService {
 
   final FirebaseDatabase _database = FirebaseDatabase.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  StreamSubscription<DatabaseEvent>? _connectionSubscription;
+  String? _activeUid;
 
-  DatabaseReference get _presenceRef =>
-      _database.ref('presence');
+  DatabaseReference get _presenceRef => _database.ref('presence');
 
   Future<void> setOnline() async {
     final user = _auth.currentUser;
@@ -19,35 +22,40 @@ class PresenceService {
       return;
     }
 
-    final userPresenceRef =
-        _presenceRef.child(user.uid);
+    _activeUid = user.uid;
+    final userPresenceRef = _presenceRef.child(user.uid);
 
-    final connectedRef =
-        _database.ref('.info/connected');
+    final connectedRef = _database.ref('.info/connected');
 
-    connectedRef.onValue.listen((event) async {
+    await _connectionSubscription?.cancel();
+    _connectionSubscription = connectedRef.onValue.listen((event) async {
       final connected = event.snapshot.value == true;
 
       if (!connected) {
         return;
       }
 
-      await userPresenceRef.onDisconnect().set(false);
-
-      await userPresenceRef.set(true);
+      try {
+        await userPresenceRef.onDisconnect().set(false);
+        await userPresenceRef.set(true);
+      } catch (_) {
+        // The next connection event will retry the presence write.
+      }
     });
   }
 
   Future<void> setOffline() async {
-    final user = _auth.currentUser;
+    final uid = _activeUid ?? _auth.currentUser?.uid;
 
-    if (user == null) {
+    if (uid == null) {
       return;
     }
 
-    await _presenceRef
-        .child(user.uid)
-        .set(false);
+    _activeUid = null;
+    await _presenceRef.child(uid).set(false);
+
+    await _connectionSubscription?.cancel();
+    _connectionSubscription = null;
   }
 
   Stream<Map<String, bool>> presenceStream() {
@@ -65,8 +73,7 @@ class PresenceService {
       final result = <String, bool>{};
 
       for (final entry in value.entries) {
-        result[entry.key.toString()] =
-            entry.value == true;
+        result[entry.key.toString()] = entry.value == true;
       }
 
       return result;

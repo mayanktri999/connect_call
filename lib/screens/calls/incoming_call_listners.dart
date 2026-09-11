@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../models/call_model.dart';
-import '../../models/user_model.dart';
 import '../calls/call_services.dart';
 import '../auth/user_service.dart';
 
@@ -52,10 +51,7 @@ class IncomingCallListener {
 
       await context.push(
         '/incoming-call',
-        extra: {
-          'call': call,
-          'callerName': caller.name.isNotEmpty ? caller.name : caller.email,
-        },
+        extra: {'callId': call.callId, 'caller': caller, 'callType': call.type},
       );
 
       _isShowingCall = false;

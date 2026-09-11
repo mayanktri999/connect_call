@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_colors.dart';
@@ -7,63 +8,28 @@ import '../../core/theme/app_design_system.dart';
 import '../../models/user_model.dart';
 import '../auth/auth_service.dart';
 import '../auth/user_service.dart';
+import '../../providers/call_history_provider.dart';
+import '../../providers/contacts_provider.dart';
+import '../../providers/user_provider.dart';
 import '../../widgets/app_bottom_nav.dart';
 import '../../widgets/user_avatar.dart';
 
-
-class ProfileScreen extends StatefulWidget {
+class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userState = ref.watch(userProvider);
+    final user = userState.valueOrNull;
+    final isLoading = userState.isLoading;
+    final contacts = ref.watch(contactsProvider).valueOrNull ?? const [];
+    final calls = ref.watch(callHistoryProvider).valueOrNull ?? const [];
+    final presence = ref.watch(presenceProvider).valueOrNull ?? const {};
+    final isOnline = user != null && (presence[user.uid] ?? false);
+    final callsThisWeek = calls.where((call) {
+      return DateTime.now().difference(call.createdAt).inDays < 7;
+    }).length;
 
-class _ProfileScreenState extends State<ProfileScreen> {
-  UserModel? _user;
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _loadUser();
-  }
-
-  Future<void> _loadUser() async {
-    final firebaseUser = FirebaseAuth.instance.currentUser;
-
-    if (firebaseUser == null) {
-      if (!mounted) return;
-
-      setState(() {
-        _isLoading = false;
-      });
-
-      return;
-    }
-
-    try {
-      final user = await UserService.instance.getUser(firebaseUser.uid);
-
-      if (!mounted) return;
-
-      setState(() {
-        _user = user;
-        _isLoading = false;
-      });
-    } catch (e) {
-      debugPrint('Failed to load user: $e');
-
-      if (!mounted) return;
-
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
         decoration: AppDesignSystem.createScreenBackground(),
@@ -79,13 +45,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     _buildHeader(),
                     const SizedBox(height: 24),
-                    _buildProfile(),
+                    _buildProfile(user, isLoading, isOnline),
                     const SizedBox(height: 20),
-                    _buildStats(),
+                    _buildStats(contacts.length, calls.length, callsThisWeek),
                     const SizedBox(height: 24),
                     _buildSectionTitle('Account'),
                     const SizedBox(height: 10),
-                    _buildAccountCard(),
+                    _buildAccountCard(user, isLoading, isOnline),
                     const SizedBox(height: 20),
                     _buildSectionTitle('Settings'),
                     const SizedBox(height: 10),
@@ -156,13 +122,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildProfile() {
-    final name = _user?.name.isNotEmpty == true
-        ? _user!.name
-        : 'User';
+  Widget _buildProfile(UserModel? user, bool isLoading, bool isOnline) {
+    final name = user?.name.isNotEmpty == true ? user!.name : 'User';
 
-    final email = _user?.email.isNotEmpty == true
-        ? _user!.email
+    final email = user?.email.isNotEmpty == true
+        ? user!.email
         : FirebaseAuth.instance.currentUser?.email ?? '';
 
     final initials = name
@@ -189,7 +153,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               UserAvatar(
                 initials: initials.isEmpty ? 'U' : initials,
                 color: AppColors.primary,
-                online: _user?.isOnline ?? true,
+                online: isOnline,
                 size: 92,
               ),
               Positioned(
@@ -201,10 +165,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   decoration: BoxDecoration(
                     color: AppColors.primary,
                     shape: BoxShape.circle,
-                    border: Border.all(
-                      color: AppColors.surface,
-                      width: 3,
-                    ),
+                    border: Border.all(color: AppColors.surface, width: 3),
                   ),
                   child: const Icon(
                     Icons.edit_rounded,
@@ -217,7 +178,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const SizedBox(height: 14),
           Text(
-            _isLoading ? 'Loading...' : name,
+            isLoading ? 'Loading...' : name,
             style: const TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w800,
@@ -226,16 +187,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const SizedBox(height: 6),
           Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 10,
-              vertical: 5,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
               color: const Color(0xFFE9FBF3),
               borderRadius: BorderRadius.circular(999),
             ),
             child: Text(
-              (_user?.isOnline ?? true) ? 'Online' : 'Offline',
+              isOnline ? 'Online' : 'Offline',
               style: const TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w700,
@@ -245,7 +203,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            _isLoading ? '' : email,
+            isLoading ? '' : email,
             style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w500,
@@ -257,7 +215,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildStats() {
+  Widget _buildStats(int contactCount, int callCount, int callsThisWeek) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 18),
       decoration: BoxDecoration(
@@ -268,31 +226,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       child: Row(
         children: [
-          const _StatItem(
-            value: '24',
-            label: 'Contacts',
-          ),
+          _StatItem(value: '$contactCount', label: 'Contacts'),
           _verticalDivider(),
-          const _StatItem(
-            value: '128',
-            label: 'Calls',
-          ),
+          _StatItem(value: '$callCount', label: 'Calls'),
           _verticalDivider(),
-          const _StatItem(
-            value: '16',
-            label: 'This week',
-          ),
+          _StatItem(value: '$callsThisWeek', label: 'This week'),
         ],
       ),
     );
   }
 
   Widget _verticalDivider() {
-    return Container(
-      width: 1,
-      height: 30,
-      color: AppColors.cardBorder,
-    );
+    return Container(width: 1, height: 30, color: AppColors.cardBorder);
   }
 
   Widget _buildSectionTitle(String title) {
@@ -307,9 +252,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildAccountCard() {
-    final email = _user?.email.isNotEmpty == true
-        ? _user!.email
+  Widget _buildAccountCard(UserModel? user, bool isLoading, bool isOnline) {
+    final email = user?.email.isNotEmpty == true
+        ? user!.email
         : FirebaseAuth.instance.currentUser?.email ?? '';
 
     return Container(
@@ -324,19 +269,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _ProfileRow(
             icon: Icons.email_outlined,
             title: 'Email',
-            value: _isLoading ? 'Loading...' : email,
-          ),
-          _divider(),
-          const _ProfileRow(
-            icon: Icons.phone_outlined,
-            title: 'Phone',
-            value: '+91 98765 43210',
+            value: isLoading ? 'Loading...' : email,
           ),
           _divider(),
           _ProfileRow(
             icon: Icons.circle,
             title: 'Status',
-            value: (_user?.isOnline ?? true) ? 'Available' : 'Offline',
+            value: isOnline ? 'Available' : 'Offline',
             valueColor: const Color(0xFF10B981),
           ),
         ],
@@ -379,16 +318,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildLogoutButton(BuildContext context) {
     return GestureDetector(
       onTap: () async {
-       final user = FirebaseAuth.instance.currentUser;
+        final user = FirebaseAuth.instance.currentUser;
 
-if (user != null) {
-  await UserService.instance.updateOnlineStatus(
-    user.uid,
-    false,
-  );
-}
+        if (user != null) {
+          await UserService.instance.updateOnlineStatus(user.uid, false);
+        }
 
-await AuthService.instance.logout();
+        await AuthService.instance.logout();
 
         if (!context.mounted) return;
 
@@ -399,18 +335,12 @@ await AuthService.instance.logout();
         decoration: BoxDecoration(
           color: const Color(0xFFFFF1F2),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: const Color(0xFFFFD9DC),
-          ),
+          border: Border.all(color: const Color(0xFFFFD9DC)),
         ),
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.logout_rounded,
-              size: 18,
-              color: Color(0xFFE54850),
-            ),
+            Icon(Icons.logout_rounded, size: 18, color: Color(0xFFE54850)),
             SizedBox(width: 8),
             Text(
               'Log out',
@@ -440,10 +370,7 @@ class _StatItem extends StatelessWidget {
   final String value;
   final String label;
 
-  const _StatItem({
-    required this.value,
-    required this.label,
-  });
+  const _StatItem({required this.value, required this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -500,11 +427,7 @@ class _ProfileRow extends StatelessWidget {
               color: AppColors.primarySoft,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(
-              icon,
-              size: 16,
-              color: AppColors.primary,
-            ),
+            child: Icon(icon, size: 16, color: AppColors.primary),
           ),
           const SizedBox(width: 11),
           Text(
@@ -551,11 +474,7 @@ class _ActionRow extends StatelessWidget {
         child: Row(
           children: [
             const SizedBox(width: 15),
-            Icon(
-              icon,
-              size: 18,
-              color: AppColors.secondaryText,
-            ),
+            Icon(icon, size: 18, color: AppColors.secondaryText),
             const SizedBox(width: 13),
             Expanded(
               child: Text(

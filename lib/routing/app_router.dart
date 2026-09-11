@@ -1,7 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../models/call_model.dart';
+import '../models/call_model.dart' as call_model;
 import '../models/user_model.dart';
 
 import '../screens/auth/login_screen.dart';
@@ -118,11 +119,26 @@ final GoRouter appRouter = GoRouter(
       path: '/incoming-call',
       name: 'incoming-call',
       builder: (context, state) {
-        final data = state.extra as Map<String, dynamic>;
+        final data = state.extra;
+
+        if (data is! Map<String, dynamic>) {
+          return const _InvalidCallDataScreen();
+        }
+
+        final callId = data['callId'];
+        final caller = data['caller'];
+        final callType = data['callType'];
+
+        if (callId is! String ||
+            caller is! UserModel ||
+            callType is! call_model.CallType) {
+          return const _InvalidCallDataScreen();
+        }
 
         return IncomingCallScreen(
-          call: data['call'] as CallModel,
-          callerName: data['callerName'] as String,
+          callId: callId,
+          caller: caller,
+          callType: callType,
         );
       },
     ),
@@ -131,12 +147,22 @@ final GoRouter appRouter = GoRouter(
     // AUDIO CALL
     // --------------------------------------------------
     GoRoute(
-      path: '/audio-call/:callId',
+      path: '/audio-call',
       name: 'audio-call',
       builder: (context, state) {
-        final callId = state.pathParameters['callId']!;
+        final data = state.extra;
 
-        return AudioCallScreen(callId: callId);
+        if (data is! Map<String, dynamic> || data['callId'] is! String) {
+          return const _InvalidCallDataScreen();
+        }
+
+        return AudioCallScreen(
+          callId: data['callId'] as String,
+          receiver: data['receiver'] is UserModel
+              ? data['receiver'] as UserModel
+              : null,
+          isCaller: data['isCaller'] is bool ? data['isCaller'] as bool : true,
+        );
       },
     ),
 
@@ -144,13 +170,32 @@ final GoRouter appRouter = GoRouter(
     // VIDEO CALL
     // --------------------------------------------------
     GoRoute(
-      path: '/video-call/:callId',
+      path: '/video-call',
       name: 'video-call',
       builder: (context, state) {
-        final callId = state.pathParameters['callId']!;
+        final data = state.extra;
 
-        return VideoCallScreen(callId: callId);
+        if (data is! Map<String, dynamic> || data['callId'] is! String) {
+          return const _InvalidCallDataScreen();
+        }
+
+        return VideoCallScreen(
+          callId: data['callId'] as String,
+          receiver: data['receiver'] is UserModel
+              ? data['receiver'] as UserModel
+              : null,
+          isCaller: data['isCaller'] is bool ? data['isCaller'] as bool : true,
+        );
       },
     ),
   ],
 );
+
+class _InvalidCallDataScreen extends StatelessWidget {
+  const _InvalidCallDataScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(body: Center(child: Text('Invalid call data')));
+  }
+}

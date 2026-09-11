@@ -1,32 +1,29 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/user_model.dart';
 import '../screens/auth/user_service.dart';
 
-class UserProvider extends ChangeNotifier {
-  UserModel? _user;
-  bool _isLoading = false;
+final userProvider = AsyncNotifierProvider<UserNotifier, UserModel?>(
+  UserNotifier.new,
+);
 
-  UserModel? get user => _user;
-  bool get isLoading => _isLoading;
+class UserNotifier extends AsyncNotifier<UserModel?> {
+  @override
+  Future<UserModel?> build() => _loadUser();
 
-  Future<void> loadUser() async {
+  Future<UserModel?> _loadUser() async {
     final firebaseUser = FirebaseAuth.instance.currentUser;
 
     if (firebaseUser == null) {
-      _user = null;
-      return;
+      return null;
     }
 
-    _isLoading = true;
-    notifyListeners();
+    return UserService.instance.getUser(firebaseUser.uid);
+  }
 
-    try {
-      _user = await UserService.instance.getUser(firebaseUser.uid);
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
+  Future<void> loadUser() async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(_loadUser);
   }
 }

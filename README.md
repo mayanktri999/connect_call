@@ -76,7 +76,7 @@ The project uses **Firebase for authentication and real-time signaling** and **W
 
 
 
-📞 Calling Flow
+##📞 Calling Flow
 Caller
   │
   ├── Select Contact
@@ -106,7 +106,7 @@ Caller
                     │                   │
                   Audio               Video
 
-🔥 Firestore Structure
+## 🔥 Firestore Structure
 users/
   └── {userId}
        ├── uid
@@ -133,7 +133,7 @@ calls/
        └── receiverCandidates/
 
 
-🌐 WebRTC
+##🌐 WebRTC
 
 WebRTC is responsible for the real-time peer-to-peer communication.
 
@@ -159,7 +159,7 @@ Remote Video Track
 Video Renderer
 
 
-📱 Call Controls
+## Call Controls
 Audio Call
 🎤 Mute / Unmute
 ☎️ End Call
@@ -169,7 +169,7 @@ Video Call
 🔄 Switch Camera
 ☎️ End Call
 
-📂 Project Structure
+##📂 Project Structure
 lib/
 │
 ├── core/
@@ -210,7 +210,7 @@ lib/
 │
 └── main.dart
 
-🚧 Future Improvements
+##🚧 Future Improvements
 TURN server integration
 Push notifications
 Background incoming calls
